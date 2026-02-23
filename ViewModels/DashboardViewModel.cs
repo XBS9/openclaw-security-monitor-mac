@@ -114,6 +114,9 @@ public partial class DashboardViewModel : ObservableObject
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Egress Rules",        Status = "Starting..." });
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Auth Patches",        Status = "Starting..." });
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Namespace Isolation", Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Config Permissions",  Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Network Exposure",    Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Token Age",           Status = "Starting..." });
     }
 
     public void UpdateStatus(GatewayStatus status)

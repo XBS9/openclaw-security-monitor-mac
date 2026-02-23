@@ -1,0 +1,227 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="OpenClawSecurityMonitorMac.Views.SettingsWindow"
+        Title="Settings — OpenClaw Monitor"
+        Width="540" Height="700"
+        MinWidth="480" MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        CanResize="True"
+        Background="#1A1A2E">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#B0B0C8"/>
+            <Setter Property="FontFamily" Value="Inter, SF Pro Display, -apple-system, sans-serif"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#8888A8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="Foreground" Value="#606078"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#12122A"/>
+            <Setter Property="Foreground" Value="#C0C0D8"/>
+            <Setter Property="BorderBrush" Value="#3A3A55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="SF Mono, Menlo, monospace"/>
+        </Style>
+        <Style Selector="NumericUpDown">
+            <Setter Property="Background" Value="#12122A"/>
+            <Setter Property="Foreground" Value="#C0C0D8"/>
+            <Setter Property="BorderBrush" Value="#3A3A55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="MinWidth" Value="90"/>
+        </Style>
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="#B0B0C8"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#2A2A42"/>
+            <Setter Property="Foreground" Value="#C0C0D8"/>
+            <Setter Property="BorderBrush" Value="#3A3A55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12.5"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3A3A58"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#1E3A8A"/>
+            <Setter Property="Foreground" Value="#E0E8FF"/>
+            <Setter Property="BorderBrush" Value="#2D55C0"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2D4FAA"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- Scrollable content -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="22,18,22,10" Spacing="18">
+
+                <!-- ── GATEWAY ────────────────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="GATEWAY" Classes="section"/>
+
+                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto,10,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Port" Classes="label"/>
+                            <NumericUpDown Grid.Row="0" Grid.Column="2"
+                                          Value="{Binding GatewayPort}"
+                                          Minimum="1024" Maximum="65535" Increment="1"
+                                          FormatString="0"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="LaunchAgent label" Classes="label"/>
+                            <TextBox Grid.Row="2" Grid.Column="2" Width="220"
+                                     Text="{Binding GatewayLabel}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── MONITOR INTERVALS ──────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="MONITOR INTERVALS (seconds)" Classes="section"/>
+
+                        <!-- Helper row macro: label left, spinner right -->
+                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto">
+
+                            <TextBlock Grid.Row="0"  Grid.Column="0" Text="Gateway Health"        Classes="label"/>
+                            <NumericUpDown Grid.Row="0"  Grid.Column="2" Value="{Binding StatusPollInterval}"
+                                          Minimum="5" Maximum="600" Increment="5" FormatString="0"/>
+
+                            <TextBlock Grid.Row="2"  Grid.Column="0" Text="File Integrity"        Classes="label"/>
+                            <NumericUpDown Grid.Row="2"  Grid.Column="2" Value="{Binding FileIntegrityInterval}"
+                                          Minimum="10" Maximum="3600" Increment="10" FormatString="0"/>
+
+                            <TextBlock Grid.Row="4"  Grid.Column="0" Text="Alert Log"             Classes="label"/>
+                            <NumericUpDown Grid.Row="4"  Grid.Column="2" Value="{Binding AlertLogInterval}"
+                                          Minimum="5" Maximum="600" Increment="5" FormatString="0"/>
+
+                            <TextBlock Grid.Row="6"  Grid.Column="0" Text="Egress Rules"          Classes="label"/>
+                            <NumericUpDown Grid.Row="6"  Grid.Column="2" Value="{Binding EgressCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="8"  Grid.Column="0" Text="Auth Patches"          Classes="label"/>
+                            <NumericUpDown Grid.Row="8"  Grid.Column="2" Value="{Binding PatchCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="10" Grid.Column="0" Text="Namespace Isolation"   Classes="label"/>
+                            <NumericUpDown Grid.Row="10" Grid.Column="2" Value="{Binding NamespaceCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="12" Grid.Column="0" Text="Config Permissions"    Classes="label"/>
+                            <NumericUpDown Grid.Row="12" Grid.Column="2" Value="{Binding PermissionCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="14" Grid.Column="0" Text="Network Exposure"      Classes="label"/>
+                            <NumericUpDown Grid.Row="14" Grid.Column="2" Value="{Binding ExposureCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="16" Grid.Column="0" Text="Token Age (seconds)"   Classes="label"/>
+                            <NumericUpDown Grid.Row="16" Grid.Column="2" Value="{Binding TokenAgeCheckInterval}"
+                                          Minimum="300" Maximum="86400" Increment="3600" FormatString="0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── SECURITY THRESHOLDS ───────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="SECURITY THRESHOLDS" Classes="section"/>
+
+                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto,10,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Token max age (days)" Classes="label"/>
+                            <NumericUpDown Grid.Row="0" Grid.Column="2" Value="{Binding TokenMaxAgeDays}"
+                                          Minimum="7" Maximum="365" Increment="1" FormatString="0"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Text="Expected patched files" Classes="label"/>
+                            <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding ExpectedPatchedFileCount}"
+                                          Minimum="1" Maximum="50" Increment="1" FormatString="0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── BEHAVIOUR ─────────────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="BEHAVIOUR" Classes="section"/>
+                        <CheckBox IsChecked="{Binding StartMinimized}"
+                                  Content="Start minimised to menu bar"/>
+                        <CheckBox IsChecked="{Binding ShowNotificationOnKillSwitch}"
+                                  Content="Show notification when kill switch fires"/>
+                        <CheckBox IsChecked="{Binding AutoReapplyEgress}"
+                                  Content="Auto-reapply egress rules when anchor is missing"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── PATHS ─────────────────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="PATHS" Classes="section"/>
+
+                        <TextBlock Text="npm global prefix" Classes="label"/>
+                        <TextBox Text="{Binding NpmGlobalPath}"/>
+
+                        <TextBlock Text="openclaw.json" Classes="label" Margin="0,4,0,0"/>
+                        <TextBox Text="{Binding OpenClawConfigPath}"/>
+
+                        <TextBlock Text="gateway.env" Classes="label" Margin="0,4,0,0"/>
+                        <TextBox Text="{Binding GatewayEnvPath}"/>
+
+                        <TextBlock Text="security-alerts.log" Classes="label" Margin="0,4,0,0"/>
+                        <TextBox Text="{Binding SecurityAlertsLogPath}"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Button bar ──────────────────────────────────────────────────── -->
+        <Border Grid.Row="1" Background="#12122A" BorderBrush="#2A2A40"
+                BorderThickness="0,1,0,0" Padding="18,12">
+            <Grid ColumnDefinitions="*,Auto">
+
+                <!-- Left: status text + reset -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+                    <TextBlock Text="{Binding SaveStatus}" FontSize="12"
+                               Foreground="#4ADE80" VerticalAlignment="Center"/>
+                    <Button Content="Reset Defaults" Command="{Binding ResetDefaultsCommand}"
+                            Foreground="#8888A8"/>
+                </StackPanel>
+
+                <!-- Right: Cancel / Save -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Cancel" Command="{Binding CancelCommand}"/>
+                    <Button Content="Save" Command="{Binding SaveCommand}" Classes="primary"
+                            MinWidth="80"/>
+                </StackPanel>
+
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>

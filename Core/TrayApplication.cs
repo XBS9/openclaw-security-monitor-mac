@@ -50,6 +50,7 @@ public class TrayApplication : IDisposable
     private LogViewerWindow? _logWindow;
     private PatchWindow? _patchWindow;
     private AboutWindow? _aboutWindow;
+    private SettingsWindow? _settingsWindow;
 
     // Cached icons for fast tray updates
     private WindowIcon? _iconGray;
@@ -561,20 +562,16 @@ public class TrayApplication : IDisposable
 
     private void OpenSettings()
     {
-        try
+        if (_settingsWindow != null)
         {
-            var settingsPath = PathUtils.ExpandFull("~/.openclaw/monitor-settings.json");
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "open",
-                ArgumentList = { "-t", settingsPath }, // macOS: open -t opens in default text editor
-                UseShellExecute = false
-            });
+            _settingsWindow.Activate();
+            return;
         }
-        catch (Exception ex)
-        {
-            ShowNotification("Error", $"Could not open settings: {ex.Message}");
-        }
+
+        var vm = new SettingsViewModel(_settings);
+        _settingsWindow = new SettingsWindow(vm);
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
     }
 
     private void ExitApp()
