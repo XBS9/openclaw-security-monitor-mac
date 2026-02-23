@@ -76,7 +76,7 @@
                         <ItemsControl ItemsSource="{Binding MonitorStatuses}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="12,*,Auto" Margin="0,3">
+                                    <Grid ColumnDefinitions="12,*,Auto,70" Margin="0,3">
                                         <Ellipse Grid.Column="0" Width="8" Height="8" VerticalAlignment="Center">
                                             <Ellipse.Fill>
                                                 <SolidColorBrush Color="{Binding DotColor}"/>
@@ -86,7 +86,10 @@
                                                    FontSize="12" Foreground="#9090A8"/>
                                         <TextBlock Grid.Column="2" Text="{Binding Status}"
                                                    FontSize="11" Foreground="#606078"
-                                                   TextTrimming="CharacterEllipsis" MaxWidth="250"/>
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding LastChecked}"
+                                                   FontSize="10" Foreground="#404058"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

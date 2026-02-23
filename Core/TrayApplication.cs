@@ -52,6 +52,8 @@ public class TrayApplication : IDisposable
     private AboutWindow? _aboutWindow;
     private SettingsWindow? _settingsWindow;
 
+    private NativeMenuItem? _updateItem;
+
     // Cached icons for fast tray updates
     private WindowIcon? _iconGray;
     private WindowIcon? _iconGreen;
@@ -80,6 +82,11 @@ public class TrayApplication : IDisposable
         _monitorHub.Updated   += OnMonitorUpdated;
 
         StartMonitors();
+
+        if (!_settings.StartMinimized)
+            Dispatcher.UIThread.InvokeAsync(ShowDashboard);
+
+        _ = StartUpdateCheckAsync();
     }
 
     // -------------------------------------------------------------------------
@@ -215,6 +222,9 @@ public class TrayApplication : IDisposable
         var aboutItem = new NativeMenuItem("About...");
         aboutItem.Click += (_, _) => Dispatcher.UIThread.InvokeAsync(ShowAbout);
         menu.Add(aboutItem);
+
+        _updateItem = new NativeMenuItem("") { IsVisible = false };
+        menu.Add(_updateItem);
 
         var settingsItem = new NativeMenuItem("Settings");
         settingsItem.Click += (_, _) => Dispatcher.UIThread.InvokeAsync(OpenSettings);
@@ -610,6 +620,31 @@ public class TrayApplication : IDisposable
 
     private static string Escape(string s) =>
         s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    // -------------------------------------------------------------------------
+    // Update check
+    // -------------------------------------------------------------------------
+
+    private async Task StartUpdateCheckAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(10)); // don't slow startup
+        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        var current = v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
+        var latest = await UpdateChecker.CheckAsync(current);
+        if (latest != null)
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (_updateItem != null)
+                {
+                    _updateItem.Header    = $"Update available — v{latest}";
+                    _updateItem.IsVisible = true;
+                }
+                ShowNotification("Update Available",
+                    $"OpenClaw Monitor v{latest} is available. Download from GitHub.");
+            });
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Dispose

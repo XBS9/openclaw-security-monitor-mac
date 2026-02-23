@@ -141,13 +141,20 @@ public class EgressMonitor : IDisposable
                 var reason = modeMismatch
                     ? $"mode {currentMode}→{expectedMode}"
                     : "anchor empty";
-                _hub.Report(MonitorHub.Egress, MonitorState.Warning, $"Reapplying ({reason})");
 
-                await ApplyModeAsync(expectedMode);
-
-                ruleCount    = await GetRuleCountAsync();
-                currentMode  = await GetCurrentModeAsync();
-                anchorMissing = expectedMode == "allowlist" && ruleCount == 0;
+                if (_settings.AutoReapplyEgress)
+                {
+                    _hub.Report(MonitorHub.Egress, MonitorState.Warning, $"Reapplying ({reason})");
+                    await ApplyModeAsync(expectedMode);
+                    ruleCount     = await GetRuleCountAsync();
+                    currentMode   = await GetCurrentModeAsync();
+                    anchorMissing = expectedMode == "allowlist" && ruleCount == 0;
+                }
+                else
+                {
+                    _hub.Report(MonitorHub.Egress, MonitorState.Warning, $"Mismatch ({reason}) — auto-reapply disabled");
+                    return;
+                }
             }
 
             var modeLabel = expectedMode == "allowlist"

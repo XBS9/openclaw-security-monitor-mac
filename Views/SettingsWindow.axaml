@@ -184,16 +184,31 @@
                         <TextBlock Text="PATHS" Classes="section"/>
 
                         <TextBlock Text="npm global prefix" Classes="label"/>
-                        <TextBox Text="{Binding NpmGlobalPath}"/>
+                        <Grid ColumnDefinitions="*,6,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding NpmGlobalPath}" x:Name="NpmGlobalPathBox"/>
+                            <Button Grid.Column="2" Content="…" x:Name="BrowseNpmBtn" Padding="10,5"/>
+                        </Grid>
 
                         <TextBlock Text="openclaw.json" Classes="label" Margin="0,4,0,0"/>
-                        <TextBox Text="{Binding OpenClawConfigPath}"/>
+                        <Grid ColumnDefinitions="*,6,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding OpenClawConfigPath}" x:Name="OpenClawConfigBox"/>
+                            <Button Grid.Column="2" Content="…" x:Name="BrowseConfigBtn" Padding="10,5"/>
+                        </Grid>
 
                         <TextBlock Text="gateway.env" Classes="label" Margin="0,4,0,0"/>
-                        <TextBox Text="{Binding GatewayEnvPath}"/>
+                        <Grid ColumnDefinitions="*,6,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding GatewayEnvPath}" x:Name="GatewayEnvBox"/>
+                            <Button Grid.Column="2" Content="…" x:Name="BrowseEnvBtn" Padding="10,5"/>
+                        </Grid>
 
                         <TextBlock Text="security-alerts.log" Classes="label" Margin="0,4,0,0"/>
-                        <TextBox Text="{Binding SecurityAlertsLogPath}"/>
+                        <Grid ColumnDefinitions="*,6,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding SecurityAlertsLogPath}" x:Name="SecurityLogBox"/>
+                            <Button Grid.Column="2" Content="…" x:Name="BrowseLogBtn" Padding="10,5"/>
+                        </Grid>
+
+                        <TextBlock x:Name="PathWarningText" Text="" Foreground="#FBBF24"
+                                   FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </StackPanel>
                 </Border>
 

@@ -19,6 +19,9 @@ public partial class MonitorStatusItem : ObservableObject
 
     [ObservableProperty]
     private Color _dotColor = Colors.Gray;
+
+    [ObservableProperty]
+    private string _lastChecked = "";
 }
 
 public partial class DashboardViewModel : ObservableObject
@@ -189,6 +192,9 @@ public partial class DashboardViewModel : ObservableObject
                 MonitorState.Alert   => Color.FromRgb(220, 80, 80),
                 _                    => Colors.Gray
             };
+            item.LastChecked = hubStatus.LastChecked.HasValue
+                ? FormatTimeAgo(hubStatus.LastChecked.Value)
+                : "";
         }
     }
 
@@ -205,6 +211,14 @@ public partial class DashboardViewModel : ObservableObject
             foreach (var evt in events.TakeLast(10).Reverse())
                 RecentEvents.Add($"[{evt.Timestamp:HH:mm:ss}] {evt.Trigger}");
         }
+    }
+
+    private static string FormatTimeAgo(DateTime dt)
+    {
+        var elapsed = DateTime.Now - dt;
+        if (elapsed.TotalSeconds < 90) return "just now";
+        if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes}m ago";
+        return $"{(int)elapsed.TotalHours}h ago";
     }
 
     [RelayCommand]

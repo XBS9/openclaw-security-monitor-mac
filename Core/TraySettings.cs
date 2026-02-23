@@ -52,9 +52,6 @@ public class TraySettings
     [JsonPropertyName("gatewayEnvPath")]
     public string GatewayEnvPath { get; set; } = "~/.openclaw/gateway.env";
 
-    [JsonPropertyName("workspacePath")]
-    public string WorkspacePath { get; set; } = "~/.openclaw/workspace";
-
     [JsonPropertyName("npmGlobalPath")]
     public string NpmGlobalPath { get; set; } = "/usr/local";
 
@@ -100,9 +97,6 @@ public class TraySettings
     // Thresholds
     [JsonPropertyName("expectedPatchedFileCount")]
     public int ExpectedPatchedFileCount { get; set; } = 7;
-
-    [JsonPropertyName("minimumEgressRuleCount")]
-    public int MinimumEgressRuleCount { get; set; } = 10;
 
     // Monitored files for FIM
     [JsonPropertyName("monitoredFiles")]
@@ -168,7 +162,6 @@ public class TraySettings
         if (!IsValidPath(ServiceBasePath))                  ServiceBasePath     = defaults.ServiceBasePath;
         if (!IsValidPath(OpenClawConfigPath))               OpenClawConfigPath  = defaults.OpenClawConfigPath;
         if (!IsValidPath(GatewayEnvPath))                   GatewayEnvPath      = defaults.GatewayEnvPath;
-        if (!IsValidPath(WorkspacePath))                    WorkspacePath       = defaults.WorkspacePath;
         if (!IsValidPath(NpmGlobalPath))                    NpmGlobalPath       = defaults.NpmGlobalPath;
         if (!IsValidPath(SecurityAlertsLogPath))            SecurityAlertsLogPath = defaults.SecurityAlertsLogPath;
         if (!IsValidPath(TrayLogPath))                      TrayLogPath         = defaults.TrayLogPath;
@@ -192,7 +185,6 @@ public class TraySettings
         PatchCheckInterval     = Clamp(PatchCheckInterval,     30,  3600);
         NamespaceCheckInterval = Clamp(NamespaceCheckInterval, 30,  3600);
         ExpectedPatchedFileCount = Clamp(ExpectedPatchedFileCount, 1,  50);
-        MinimumEgressRuleCount   = Clamp(MinimumEgressRuleCount,   1,  500);
         PermissionCheckInterval  = Clamp(PermissionCheckInterval,  30, 3600);
         ExposureCheckInterval    = Clamp(ExposureCheckInterval,    30, 3600);
         TokenAgeCheckInterval    = Clamp(TokenAgeCheckInterval,    300, 86400);

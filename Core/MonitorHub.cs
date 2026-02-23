@@ -13,6 +13,7 @@ public class MonitorStatus
     public string Name { get; set; } = "";
     public MonitorState State { get; set; } = MonitorState.Starting;
     public string Detail { get; set; } = "Starting...";
+    public DateTime? LastChecked { get; set; }
 }
 
 public class MonitorHub
@@ -59,6 +60,7 @@ public class MonitorHub
             {
                 status.State = state;
                 status.Detail = detail;
+                status.LastChecked = DateTime.Now;
             }
             handler = Updated;
         }

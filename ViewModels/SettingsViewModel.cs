@@ -42,6 +42,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _saveStatus = "";
 
     public event Action? CloseRequested;
+    public event Action<string>? PathWarning;
 
     public SettingsViewModel(TraySettings settings)
     {
@@ -108,6 +109,8 @@ public partial class SettingsViewModel : ObservableObject
         _settings.Validate();
         _settings.Save();
 
+        var warnings = ValidatePaths();
+        PathWarning?.Invoke(warnings);
         SaveStatus = "Saved ✓";
         _ = ClearSaveStatusAsync();
     }
@@ -141,6 +144,17 @@ public partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void Cancel() => CloseRequested?.Invoke();
+
+    private string ValidatePaths()
+    {
+        var missing = new List<string>();
+        string Expand(string p) => p.Replace("~", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        if (!Directory.Exists(Expand(NpmGlobalPath)))           missing.Add("npm global prefix");
+        if (!File.Exists(Expand(OpenClawConfigPath)))           missing.Add("openclaw.json");
+        if (!File.Exists(Expand(GatewayEnvPath)))               missing.Add("gateway.env");
+        if (!File.Exists(Expand(SecurityAlertsLogPath)))        missing.Add("security-alerts.log");
+        return missing.Count == 0 ? "" : $"⚠ Not found: {string.Join(", ", missing)}";
+    }
 
     private async Task ClearSaveStatusAsync()
     {
