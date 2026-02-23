@@ -139,6 +139,9 @@ public class TraySettings
     [JsonPropertyName("showNotificationOnKillSwitch")]
     public bool ShowNotificationOnKillSwitch { get; set; } = true;
 
+    [JsonPropertyName("hasShownFirstRun")]
+    public bool HasShownFirstRun { get; set; } = false;
+
     // -------------------------------------------------------------------------
     // Validation
     // -------------------------------------------------------------------------

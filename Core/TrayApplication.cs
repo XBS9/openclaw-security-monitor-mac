@@ -83,7 +83,9 @@ public class TrayApplication : IDisposable
 
         StartMonitors();
 
-        if (!_settings.StartMinimized)
+        if (!_settings.HasShownFirstRun)
+            Dispatcher.UIThread.InvokeAsync(ShowFirstRun);
+        else if (!_settings.StartMinimized)
             Dispatcher.UIThread.InvokeAsync(ShowDashboard);
 
         _ = StartUpdateCheckAsync();
@@ -555,6 +557,19 @@ public class TrayApplication : IDisposable
         _patchWindow = new PatchWindow { DataContext = vm };
         _patchWindow.Closed += (_, _) => { vm.Cleanup(); _patchWindow = null; };
         _patchWindow.Show();
+    }
+
+    private void ShowFirstRun()
+    {
+        var win = new FirstRunWindow();
+        win.Closed += (_, _) =>
+        {
+            _settings.HasShownFirstRun = true;
+            _settings.Save();
+            if (!_settings.StartMinimized)
+                ShowDashboard();
+        };
+        win.Show();
     }
 
     private void ShowAbout()
