@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="OpenClawSecurityMonitorMac.Views.LogViewerWindow"
+        Title="Security Log"
+        Width="720" Height="560"
+        WindowStartupLocation="CenterScreen"
+        Background="#1A1A2E">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#B0B0C8"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#2A2A42"/>
+            <Setter Property="Foreground" Value="#C0C0D8"/>
+            <Setter Property="BorderBrush" Value="#3A3A55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10,5"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#12122A"/>
+            <Setter Property="Foreground" Value="#B0B0C8"/>
+            <Setter Property="BorderBrush" Value="#3A3A55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+
+        <!-- Search bar -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
+            <TextBox Grid.Column="0" Text="{Binding SearchText}" Watermark="Search events..."
+                     Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Margin="0,0,8,0"/>
+            <Button Grid.Column="2" Content="Load Gateway Logs" Command="{Binding LoadGatewayLogsCommand}"/>
+        </Grid>
+
+        <!-- Tab control -->
+        <TabControl Grid.Row="1" Background="Transparent">
+            <TabItem Header="Security Events">
+                <Border Background="#12122A" BorderBrush="#2A2A40" BorderThickness="1" CornerRadius="6">
+                    <ListBox ItemsSource="{Binding FilteredEvents}"
+                             Background="Transparent"
+                             SelectionMode="Single">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="SF Mono, Menlo, monospace"
+                                           FontSize="11" Foreground="#9090A8" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </TabItem>
+            <TabItem Header="Gateway Logs">
+                <Border Background="#12122A" BorderBrush="#2A2A40" BorderThickness="1" CornerRadius="6" Padding="8">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBlock Text="{Binding GatewayLogs}"
+                                   FontFamily="SF Mono, Menlo, monospace"
+                                   FontSize="11" Foreground="#808098"
+                                   TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+        </TabControl>
+
+        <!-- Bottom action bar -->
+        <Border Grid.Row="2" BorderBrush="#2A2A40" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                <Button Content="Clear Events" Command="{Binding ClearEventsCommand}"/>
+                <Button Content="Close" Click="CloseButton_Click"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>

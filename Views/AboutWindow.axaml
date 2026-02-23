@@ -1,0 +1,233 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="OpenClawSecurityMonitorMac.Views.AboutWindow"
+        Title="About"
+        Width="640" Height="1060"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        Background="#1A1A2E">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#B0B0C8"/>
+            <Setter Property="FontFamily" Value="Inter, SF Pro Display, -apple-system, sans-serif"/>
+        </Style>
+    </Window.Styles>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,20,24,24">
+
+            <!-- Title -->
+            <TextBlock Text="OpenClaw Security Monitor" FontSize="24" FontWeight="Bold"
+                       Foreground="#EBEBF0" Margin="0,0,0,4"/>
+            <TextBlock x:Name="VersionText" Text="Version —" FontSize="12" Foreground="#606078" Margin="0,0,0,4"/>
+            <TextBlock Text="macOS Edition" FontSize="11" Foreground="#404058" Margin="0,0,0,12"/>
+
+            <Separator Background="#2A2A40" Margin="0,6,0,14" Height="1"/>
+
+            <!-- Plain-language explanation -->
+            <TextBlock Text="WHAT IS THIS PROTECTING?" FontSize="10" Foreground="#606078"
+                       FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+            <TextBlock TextWrapping="Wrap" Foreground="#B0B0C8" FontSize="12.5" LineHeight="21" Margin="0,0,0,12">
+                Your AI assistant (OpenClaw) runs like a smart employee who has access to your passwords,
+                API keys, and personal files. This app is the security guard that watches over it 24/7.
+            </TextBlock>
+
+            <TextBlock TextWrapping="Wrap" Foreground="#B0B0C8" FontSize="12.5" LineHeight="21" Margin="0,0,0,12">
+                Hackers have been specifically targeting AI assistants. They trick the AI into leaking your
+                passwords by hiding instructions inside innocent-looking messages. They install fake AI plugins
+                that secretly grab your files. They hammer the login door thousands of times per minute trying
+                to guess the key. In just 4 months, over 91,000 attacks against AI systems were recorded —
+                and 341 fake plugins were found stealing real users' data.
+            </TextBlock>
+
+            <TextBlock TextWrapping="Wrap" Foreground="#B0B0C8" FontSize="12.5" LineHeight="21" Margin="0,0,0,12">
+                This monitor runs 9 guard posts continuously. The moment something looks wrong — a file gets
+                tampered with, the network tries to phone home somewhere suspicious, your config permissions
+                drift open, or someone starts hammering the login — it hits the panic button: locks the AI
+                down instantly, turns the menu bar icon red, and only you can re-open it.
+            </TextBlock>
+
+            <Separator Background="#2A2A40" Margin="0,6,0,14" Height="1"/>
+
+            <!-- Kill switch -->
+            <TextBlock Text="KILL SWITCH" FontSize="10" Foreground="#606078" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock TextWrapping="Wrap" Foreground="#B0B0C8" FontSize="12.5" LineHeight="21" Margin="0,0,0,20">
+                When any monitor detects a confirmed threat, the kill switch fires immediately:
+                the gateway is switched to the hardened launchd plist, the menu bar icon turns red,
+                and a notification appears. Only you can re-unlock from the tray menu — the AI cannot
+                unlock itself.
+            </TextBlock>
+
+            <!-- Tray states -->
+            <TextBlock Text="MENU BAR ICON STATES" FontSize="10" Foreground="#606078"
+                       FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <StackPanel Margin="0,0,0,20" Spacing="6">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="10" Height="10" Fill="#4ADE80" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Green — All monitors healthy" Foreground="#B0B0C8" FontSize="12.5"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="10" Height="10" Fill="#FBBF24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Yellow — Warning or gateway locked" Foreground="#B0B0C8" FontSize="12.5"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="10" Height="10" Fill="#F87171" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Red — Kill switch engaged or gateway stopped" Foreground="#B0B0C8" FontSize="12.5"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Defense layers -->
+            <TextBlock Text="THE 9 GUARD POSTS" FontSize="10" Foreground="#606078"
+                       FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="1. Gateway Health — every 15s" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Is the AI actually running? Did it crash or get switched into a different mode
+                        without your permission? Two consecutive unknown-state readings trigger the kill switch.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="2. File Integrity — every 60s" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Tracks SHA-256 fingerprints of 12 critical files: the AI's personality (SOUL.md),
+                        config, gateway tokens, launchd plist templates, and identity files. Any unauthorized
+                        edit to a critical file triggers the kill switch instantly.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="3. Threat + Auth Scanner — every 30s" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Scans the security log for 19 attack signatures — prompt injection, exfiltration attempts,
+                        sandbox escape tries, and infostealer patterns. Also checks the macOS log for
+                        brute-force: more than 10 failed logins per minute raises an alert.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="4. Egress / Network Guard — every 5 min" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Verifies the macOS pf firewall allowlist is active. The AI can only reach trusted
+                        services — Anthropic, Telegram, GitHub, etc. Everything else is blocked at the
+                        network level. Auto-switches between allowlist (locked) and denylist (unlocked) modes.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="5. Auth Patch Integrity — every 5 min" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Confirms timing-safe authentication is in place across the gateway dist files.
+                        Detects if an npm update wiped the patches and triggers auto-reapplication.
+                        Uses BSD sed (-i '') for macOS-compatible in-place patching.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="6. Isolation / Namespace Guard — every 5 min" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Checks that the hardened launchd plist still has ProcessType=Background and
+                        the Docker socket hasn't been opened to the world (777). Also warns if the
+                        active plist is the stock unhardened version.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="7. Config Permissions — every 5 min" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Verifies ~/.openclaw/ is mode 700 and that all sensitive files inside it
+                        (gateway tokens, device keys, credentials) are mode 600. Automatically
+                        corrects wrong permissions on every cycle. Directly mitigates the Feb 2026
+                        Vidar infostealer campaign that stole tokens from world-readable configs.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="8. Network Exposure — every 5 min" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Checks two public-exposure vectors: (1) whether the gateway is bound to
+                        0.0.0.0 — the default that left 30,000+ instances LAN-exposed in Feb 2026
+                        audits — and (2) whether Tailscale Funnel is active on the gateway port,
+                        making it reachable from the public internet. Warns on either condition.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1"
+                    Padding="14" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="9. Token Age — every 6 hours" FontWeight="SemiBold"
+                               Foreground="#EBEBF0" FontSize="12.5"/>
+                    <TextBlock TextWrapping="Wrap" Foreground="#8888A0" FontSize="11.5"
+                               Margin="0,5,0,0" LineHeight="18">
+                        Tracks how long ago your gateway token was last rotated. Warns when it
+                        exceeds 30 days. CVE-2026-25253 can silently steal the token via a single
+                        malicious webpage — rotating it regularly limits the damage window even if
+                        an exfiltration went undetected. Rotate with: openclaw auth rotate-token
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Separator Background="#2A2A40" Margin="0,6,0,14" Height="1"/>
+
+            <TextBlock Text="ARCHITECTURE" FontSize="10" Foreground="#606078"
+                       FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock TextWrapping="Wrap" Foreground="#B0B0C8" FontSize="12.5" LineHeight="21" Margin="0,0,0,20">
+                .NET 8 + Avalonia 11 cross-platform UI. All monitors run on PeriodicTimer loops via
+                native macOS bash (/bin/bash). Settings stored in ~/.openclaw/monitor-settings.json
+                with SHA-256 integrity check and chmod 600. The kill switch is local-only — it cannot
+                be triggered remotely.
+            </TextBlock>
+
+            <Separator Background="#2A2A40" Margin="0,0,0,14" Height="1"/>
+
+            <TextBlock TextWrapping="Wrap" Foreground="#606078" FontSize="11.5" LineHeight="19"
+                       HorizontalAlignment="Center" TextAlignment="Center">
+                Vibe coded with Claude Sonnet 4.6&#x0a;@CatalinaWeeknd · x.com
+            </TextBlock>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>

@@ -1,0 +1,19 @@
+# .NET build artifacts
+bin/
+obj/
+
+# Publish output (binaries shipped via GitHub Releases, not committed)
+publish/
+
+# Generated icon intermediates (keep openclaw.icns, skip the png folder)
+openclaw.iconset/
+
+# macOS
+.DS_Store
+*.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.user
+*.suo

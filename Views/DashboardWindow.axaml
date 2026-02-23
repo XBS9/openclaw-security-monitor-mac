@@ -1,0 +1,141 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenClawSecurityMonitorMac.ViewModels"
+        x:Class="OpenClawSecurityMonitorMac.Views.DashboardWindow"
+        Title="OpenClaw Security Monitor"
+        Width="560" Height="660"
+        MinWidth="480" MinHeight="580"
+        WindowStartupLocation="CenterScreen"
+        CanResize="True"
+        Background="#1A1A2E">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="#B0B0C8"/>
+            <Setter Property="FontFamily" Value="Inter, SF Pro Display, -apple-system, sans-serif"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#2A2A42"/>
+            <Setter Property="Foreground" Value="#C0C0D8"/>
+            <Setter Property="BorderBrush" Value="#3A3A55"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#3A3A58"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#12122A" Padding="20,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock Text="{Binding VersionText}" FontSize="11" Foreground="#505068"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Ellipse Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <Ellipse.Fill>
+                                <SolidColorBrush Color="{Binding StatusColor}"/>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <TextBlock Text="{Binding StatusTitle}" FontSize="16" FontWeight="SemiBold" Foreground="#EBEBF0"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding StatusDetail}" FontSize="12" Foreground="#606078" Margin="18,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock Text="SCORE" FontSize="10" Foreground="#404058" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding ScoreDisplay}" FontSize="26" FontWeight="Bold"
+                               HorizontalAlignment="Center">
+                        <TextBlock.Foreground>
+                            <SolidColorBrush Color="{Binding StatusColor}"/>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20,16,20,0" Spacing="12">
+
+                <!-- Alert banner -->
+                <Border Background="#3A1515" BorderBrush="#8B2020" BorderThickness="1"
+                        CornerRadius="6" Padding="12,10"
+                        IsVisible="{Binding IsAlertVisible}">
+                    <TextBlock Text="{Binding AlertBannerText}" Foreground="#FF8888"
+                               TextWrapping="Wrap" FontSize="12"/>
+                </Border>
+
+                <!-- Monitor status grid -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1" Padding="14">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="MONITORS" FontSize="10" Foreground="#505068" FontWeight="SemiBold"/>
+                        <ItemsControl ItemsSource="{Binding MonitorStatuses}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="12,*,Auto" Margin="0,3">
+                                        <Ellipse Grid.Column="0" Width="8" Height="8" VerticalAlignment="Center">
+                                            <Ellipse.Fill>
+                                                <SolidColorBrush Color="{Binding DotColor}"/>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="8,0,0,0"
+                                                   FontSize="12" Foreground="#9090A8"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Status}"
+                                                   FontSize="11" Foreground="#606078"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="250"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recent events -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1" Padding="14">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="RECENT EVENTS" FontSize="10" Foreground="#505068" FontWeight="SemiBold"/>
+                        <ItemsControl ItemsSource="{Binding RecentEvents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontSize="11" Foreground="#606078"
+                                               FontFamily="SF Mono, Menlo, monospace"
+                                               Margin="0,2" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Button bar -->
+        <Border Grid.Row="2" Background="#12122A" BorderBrush="#2A2A40" BorderThickness="0,1,0,0" Padding="16,10">
+            <StackPanel HorizontalAlignment="Center" Spacing="7">
+                <!-- Row 1: Primary gateway actions -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                    <Button Content="{Binding LockButtonText}" Command="{Binding ToggleLockCommand}"
+                            MinWidth="118"/>
+                    <Button Content="Restart" Command="{Binding RestartCommand}"
+                            MinWidth="76"/>
+                    <Button Content="{Binding PauseButtonText}" Command="{Binding TogglePauseCommand}"
+                            MinWidth="126"/>
+                </StackPanel>
+                <!-- Row 2: Navigation / info -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
+                    <Button Content="Security Log" Command="{Binding OpenLogCommand}" MinWidth="98"/>
+                    <Button Content="Auto-Patch"   Command="{Binding OpenPatchCommand}" MinWidth="86"/>
+                    <Button Content="Settings"     Command="{Binding OpenSettingsCommand}" MinWidth="74"/>
+                    <Button Content="About"        Command="{Binding OpenAboutCommand}" MinWidth="62"/>
+                    <Button Content="Quit"         Command="{Binding ExitCommand}"
+                            MinWidth="54" Foreground="#FF6B6B"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</Window>

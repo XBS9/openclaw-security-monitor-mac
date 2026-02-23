@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>OpenClawSecurityMonitorMac</AssemblyName>
+    <RootNamespace>OpenClawSecurityMonitorMac</RootNamespace>
+    <Version>1.5.2</Version>
+    <AssemblyVersion>1.5.2.0</AssemblyVersion>
+    <FileVersion>1.5.2.0</FileVersion>
+
+    <!-- macOS single-file publish -->
+    <!-- RID defaults to osx-x64 (Intel). Override at publish time:           -->
+    <!--   dotnet publish -r osx-arm64   (Apple Silicon M1/M2/M3)             -->
+    <!--   dotnet publish -r osx-x64     (Intel 2019 and earlier)             -->
+    <!-- Or use build-release.sh to produce both architectures automatically. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">osx-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <PublishReadyToRun>false</PublishReadyToRun><!-- R2R not supported for all Avalonia paths -->
+
+    <!-- macOS app bundle metadata -->
+    <ApplicationId>com.openclaw.security-monitor</ApplicationId>
+    <CFBundleDisplayName>OpenClaw Security Monitor</CFBundleDisplayName>
+    <CFBundleIdentifier>com.openclaw.security-monitor</CFBundleIdentifier>
+    <CFBundleVersion>1.5.2</CFBundleVersion>
+    <CFBundleShortVersionString>1.5.2</CFBundleShortVersionString>
+
+    <Company>OpenClaw</Company>
+    <Product>OpenClaw Security Monitor</Product>
+    <Description>Lightweight security monitor for OpenClaw gateway (macOS)</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Avalonia cross-platform UI (replaces WPF/WinForms) -->
+    <PackageReference Include="Avalonia" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.3" />
+    <!-- MVVM toolkit (same as Windows) -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+</Project>
