@@ -1,3 +1,5 @@
+using System.IO;
+using System.Linq;
 using OpenClawSecurityMonitorMac.Core;
 using OpenClawSecurityMonitorMac.Models;
 
@@ -124,6 +126,32 @@ public class GatewayService
 
         var (exitCode, _, _) = await _cmd.RunAsync(cmd);
         return exitCode == 0;
+    }
+
+    /// <summary>
+    /// Runs ~/.openclaw/sync-gateway-token.sh to sync gateway.auth.token → remote.token,
+    /// gateway.env, and the launchd plist. Restarts the gateway only if something was out
+    /// of sync. Safe to call repeatedly — no-ops when all tokens already match.
+    /// </summary>
+    public async Task<(bool Success, string Message)> SyncTokenAsync()
+    {
+        // ExpandFull gives the real filesystem path for File.Exists check
+        var scriptPath = PathUtils.ExpandFull("~/.openclaw/sync-gateway-token.sh");
+        if (!File.Exists(scriptPath))
+            return (false, "Sync script not found. Run: oc-sync in terminal first.");
+
+        // Use Expand for the bash command so PATH/HOME are correct at runtime
+        var bashScript = PathUtils.Expand("~/.openclaw/sync-gateway-token.sh");
+        var (exitCode, output, _) = await _cmd.RunAsync($"bash \"{bashScript}\" 2>&1");
+
+        // Return the last non-empty line as the summary (matches script log format)
+        var summary = output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(l => l.Trim())
+            .LastOrDefault(l => !string.IsNullOrWhiteSpace(l))
+            ?? "Done";
+
+        return (exitCode == 0, summary);
     }
 
     public async Task<string> GetLogsAsync(int lines = 100)

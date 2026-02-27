@@ -521,9 +521,9 @@ public class TrayApplication : IDisposable
                 {
                     if (_monitorsPaused) TogglePause();
                 });
-            }, null, TimeSpan.FromHours(1), Timeout.InfiniteTimeSpan);
+            }, null, TimeSpan.FromHours(2), Timeout.InfiniteTimeSpan);
             ShowNotification("Monitors Paused",
-                "Security monitors paused for maintenance. Auto-resume in 1 hour.");
+                "Security monitors paused for maintenance. Auto-resume in 2 hours.");
         }
     }
 

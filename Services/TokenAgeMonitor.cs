@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using OpenClawSecurityMonitorMac.Core;
 
 namespace OpenClawSecurityMonitorMac.Services;
@@ -6,6 +8,11 @@ namespace OpenClawSecurityMonitorMac.Services;
 /// Tracks how long ago the gateway token was last rotated, using the mtime of
 /// device-auth.json (or device.json / gateway.env as fallbacks) as a proxy.
 /// Warns when the token is older than TokenMaxAgeDays.
+///
+/// Also checks two additional conditions on every cycle:
+///   1. Token sync: gateway.auth.token must equal gateway.remote.token in openclaw.json.
+///      A mismatch causes "gateway token mismatch" errors in the TUI/CLI. Fix: run oc-sync.
+///   2. Stale oauth.json: removed in OpenClaw v2026.2.23; leftover file is a data-exposure risk.
 ///
 /// Background: CVE-2026-25253 can silently exfiltrate the gateway token via a
 /// single malicious webpage. Periodic rotation limits the exposure window even if
@@ -79,6 +86,38 @@ public class TokenAgeMonitor : IDisposable
     {
         try
         {
+            var warnings = new List<string>();
+
+            // ── 1. Stale oauth.json check ────────────────────────────────────
+            // oauth.json was removed in OpenClaw v2026.2.23 (exposed PKCE verifiers).
+            // A leftover file is a minor data-exposure risk and should be deleted.
+            var oauthPath = PathUtils.Expand("~/.openclaw/oauth.json");
+            var (_, oauthOut, _) = await _cmd.RunAsync(
+                $"[ -f \"{oauthPath}\" ] && echo EXISTS || echo GONE");
+            if (oauthOut.Trim() == "EXISTS")
+                warnings.Add("oauth.json found — delete it (stale, v2026.2.23+)");
+
+            // ── 2. Token sync check ──────────────────────────────────────────
+            // gateway.auth.token (what the gateway expects) must equal
+            // gateway.remote.token (what the TUI/CLI sends). A mismatch causes
+            // "unauthorized: gateway token mismatch" on every TUI connection.
+            // Cause: Security Monitor restarts can rotate auth.token without
+            // updating remote.token. Fix: run oc-sync.
+            // Use ExpandFull() so python3 gets the real filesystem path, not "$HOME/...".
+            var configFullPath = PathUtils.ExpandFull(_settings.OpenClawConfigPath);
+            if (File.Exists(configFullPath))
+            {
+                var (_, syncOut, _) = await _cmd.RunAsync(
+                    $"python3 -c \"" +
+                    $"import json; c=json.load(open('{configFullPath}')); " +
+                    $"a=c.get('gateway',{{}}).get('auth',{{}}).get('token',''); " +
+                    $"r=c.get('gateway',{{}}).get('remote',{{}}).get('token',''); " +
+                    $"print('MATCH' if a and r and a==r else 'MISMATCH')\" 2>/dev/null || echo UNKNOWN");
+                if (syncOut.Trim() == "MISMATCH")
+                    warnings.Add("Token mismatch — run: oc-sync");
+            }
+
+            // ── 3. Token age check ───────────────────────────────────────────
             // Emit the mtime (Unix epoch seconds) for each existing candidate file.
             // "0" is emitted when a file does not exist so it is ignored in parsing.
             var cmds = CandidateFiles.Select(raw =>
@@ -98,27 +137,30 @@ public class TokenAgeMonitor : IDisposable
 
             if (latestEpoch == 0)
             {
-                // None of the candidate files exist — OpenClaw may not be paired yet.
-                _hub.Report(MonitorHub.TokenAge, MonitorState.Warning,
-                    "Token files not found — is the gateway paired?");
-                return;
-            }
-
-            var tokenDate = DateTimeOffset.FromUnixTimeSeconds(latestEpoch).LocalDateTime;
-            var ageDays   = (int)(DateTime.Now - tokenDate).TotalDays;
-            var maxDays   = _settings.TokenMaxAgeDays;
-
-            if (ageDays > maxDays)
-            {
-                _hub.Report(MonitorHub.TokenAge, MonitorState.Warning,
-                    $"Token {ageDays}d old (>{maxDays}d) — run: openclaw auth rotate-token");
+                warnings.Add("Token files not found — paired?");
             }
             else
             {
-                var remaining = maxDays - ageDays;
-                _hub.Report(MonitorHub.TokenAge, MonitorState.Ok,
-                    $"Token {ageDays}d old · rotate in {remaining}d");
+                var tokenDate = DateTimeOffset.FromUnixTimeSeconds(latestEpoch).LocalDateTime;
+                var ageDays   = (int)(DateTime.Now - tokenDate).TotalDays;
+                var maxDays   = _settings.TokenMaxAgeDays;
+
+                if (ageDays > maxDays)
+                    warnings.Add($"Token {ageDays}d old (>{maxDays}d) — rotate");
+                else if (warnings.Count == 0)
+                {
+                    // All clean — report age status
+                    var remaining = maxDays - ageDays;
+                    _hub.Report(MonitorHub.TokenAge, MonitorState.Ok,
+                        $"Token {ageDays}d old · rotate in {remaining}d");
+                    return;
+                }
+                // else: has other warnings but age is fine — omit age from message
             }
+
+            if (warnings.Count > 0)
+                _hub.Report(MonitorHub.TokenAge, MonitorState.Warning,
+                    string.Join(" · ", warnings));
         }
         catch (Exception ex)
         {

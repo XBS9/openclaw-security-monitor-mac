@@ -117,6 +117,8 @@ public class TraySettings
         new() { Path = "~/.openclaw/identity/device-auth.json", Critical = false, CheckPermissions = "600" },
         // OAuth/token store
         new() { Path = "~/.openclaw/agents/main/agent/auth-profiles.json", Critical = false, CheckPermissions = "600" },
+        // JWT credentials (Codex/Anthropic tokens — high-value infostealer target)
+        new() { Path = "~/.openclaw/agents/main/agent/auth.json",          Critical = false, CheckPermissions = "600" },
     };
 
     // Egress (macOS pf firewall)

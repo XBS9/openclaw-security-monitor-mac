@@ -66,6 +66,15 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private string _alertBannerText = "";
 
+    [ObservableProperty]
+    private string _syncStatusText = "";
+
+    [ObservableProperty]
+    private bool _isSyncStatusVisible;
+
+    [ObservableProperty]
+    private IBrush _syncStatusBrush = Brushes.Gray;
+
     public ObservableCollection<MonitorStatusItem> MonitorStatuses { get; } = new();
     public ObservableCollection<string> RecentEvents { get; } = new();
 
@@ -275,6 +284,26 @@ public partial class DashboardViewModel : ObservableObject
 
     [RelayCommand]
     private void Exit() => _exitAction();
+
+    [RelayCommand]
+    private async Task SyncToken()
+    {
+        SyncStatusText       = "Syncing token...";
+        SyncStatusBrush      = Brushes.Gray;
+        IsSyncStatusVisible  = true;
+
+        var (success, message) = await _gateway.SyncTokenAsync();
+
+        SyncStatusText  = success ? $"✓ {message}" : $"✗ {message}";
+        SyncStatusBrush = success
+            ? new SolidColorBrush(Color.FromRgb(80, 200, 100))
+            : new SolidColorBrush(Color.FromRgb(220, 100, 80));
+
+        // Auto-clear after 5 seconds
+        await Task.Delay(5000);
+        IsSyncStatusVisible = false;
+        SyncStatusText      = "";
+    }
 
     [RelayCommand]
     private void TogglePause()

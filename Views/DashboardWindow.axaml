@@ -119,14 +119,22 @@
         <!-- Button bar -->
         <Border Grid.Row="2" Background="#12122A" BorderBrush="#2A2A40" BorderThickness="0,1,0,0" Padding="16,10">
             <StackPanel HorizontalAlignment="Center" Spacing="7">
+                <!-- Sync status feedback (auto-hides after 5s) -->
+                <TextBlock Text="{Binding SyncStatusText}"
+                           Foreground="{Binding SyncStatusBrush}"
+                           FontSize="11" HorizontalAlignment="Center"
+                           IsVisible="{Binding IsSyncStatusVisible}"
+                           FontFamily="SF Mono, Menlo, monospace"/>
                 <!-- Row 1: Primary gateway actions -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
                     <Button Content="{Binding LockButtonText}" Command="{Binding ToggleLockCommand}"
-                            MinWidth="118"/>
+                            MinWidth="104"/>
                     <Button Content="Restart" Command="{Binding RestartCommand}"
-                            MinWidth="76"/>
+                            MinWidth="68"/>
+                    <Button Content="Sync Token" Command="{Binding SyncTokenCommand}"
+                            MinWidth="84"/>
                     <Button Content="{Binding PauseButtonText}" Command="{Binding TogglePauseCommand}"
-                            MinWidth="126"/>
+                            MinWidth="112"/>
                 </StackPanel>
                 <!-- Row 2: Navigation / info -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
