@@ -65,6 +65,8 @@ public class TrayApplication : IDisposable
     private SettingsWindow? _settingsWindow;
 
     private NativeMenuItem? _updateItem;
+    private CancellationTokenSource? _updateCts;
+    private string? _updateLocalPath; // path to downloaded DMG once ready
 
     // Cached icons for fast tray updates
     private WindowIcon? _iconGray;
@@ -251,10 +253,15 @@ public class TrayApplication : IDisposable
         {
             try
             {
+                // If the DMG was already downloaded, open it directly; otherwise open releases page
+                var target = (_updateLocalPath != null && File.Exists(_updateLocalPath))
+                    ? _updateLocalPath
+                    : "https://github.com/XBS9/openclaw-security-monitor-mac/releases";
+
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName        = "open",
-                    ArgumentList    = { "https://github.com/XBS9/openclaw-security-monitor-mac/releases" },
+                    ArgumentList    = { target },
                     UseShellExecute = false,
                     CreateNoWindow  = true
                 });
@@ -938,28 +945,108 @@ public class TrayApplication : IDisposable
 
     private async Task StartUpdateCheckAsync()
     {
-        await Task.Delay(TimeSpan.FromSeconds(10)); // don't slow startup
+        _updateCts = new CancellationTokenSource();
+        var ct = _updateCts.Token;
 
-        // Check monitor app update
-        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        var current = v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
-        var latest = await UpdateChecker.CheckAsync(current);
-        if (latest != null)
+        try
         {
-            _ = Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                if (_updateItem != null)
-                {
-                    _updateItem.Header    = $"Update available — v{latest}";
-                    _updateItem.IsVisible = true;
-                }
-                ShowNotification("Update Available",
-                    $"OpenClaw Monitor v{latest} is available. Download from GitHub.");
-            });
-        }
+            await Task.Delay(TimeSpan.FromSeconds(10), ct); // don't slow startup
 
-        // Check openclaw npm package update
-        await CheckOpenClawNpmVersionAsync();
+            var v       = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            var current = v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
+
+            // First check immediately, then repeat every 24 hours
+            await PerformMonitorUpdateCheckAsync(current, ct);
+
+            using var timer = new PeriodicTimer(TimeSpan.FromHours(24));
+            while (await timer.WaitForNextTickAsync(ct))
+                await PerformMonitorUpdateCheckAsync(current, ct);
+        }
+        catch (OperationCanceledException) { }
+
+        // npm check runs once at startup (best-effort)
+        if (!(_updateCts?.IsCancellationRequested ?? true))
+            await CheckOpenClawNpmVersionAsync();
+    }
+
+    private async Task PerformMonitorUpdateCheckAsync(string current, CancellationToken ct)
+    {
+        var info = await UpdateChecker.CheckAsync(current);
+        if (info == null || ct.IsCancellationRequested) return;
+
+        // Show menu item immediately
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (_updateItem != null)
+            {
+                _updateItem.Header    = $"Downloading update — v{info.Version}...";
+                _updateItem.IsVisible = true;
+            }
+        });
+
+        // Download the DMG in the background
+        ShowNotification("Update Available",
+            $"OpenClaw Monitor v{info.Version} found — downloading in the background...");
+
+        var localPath = await UpdateChecker.DownloadAsync(info, ct);
+        if (localPath == null || ct.IsCancellationRequested) return;
+
+        _updateLocalPath = localPath;
+
+        // Update menu item to "ready"
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (_updateItem != null)
+                _updateItem.Header = $"Install update — v{info.Version}";
+        });
+
+        // Show install dialog via osascript
+        await OfferInstallAsync(info.Version, localPath, ct);
+    }
+
+    private async Task OfferInstallAsync(string version, string dmgPath, CancellationToken ct)
+    {
+        try
+        {
+            var script =
+                $"display dialog \"OpenClaw Monitor v{version} has been downloaded and is ready to install.\\n\\n" +
+                $"Click \\\"Install Now\\\" to open the disk image, then drag OpenClawMonitor to your Applications folder.\" " +
+                $"with title \"Update Ready\" " +
+                $"buttons {{\"Later\", \"Install Now\"}} " +
+                $"default button \"Install Now\"";
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName              = "osascript",
+                UseShellExecute       = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow        = true
+            };
+            psi.ArgumentList.Add("-e");
+            psi.ArgumentList.Add(script);
+
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc == null) return;
+
+            var output = await proc.StandardOutput.ReadToEndAsync(ct);
+            await proc.WaitForExitAsync(ct);
+
+            if (output.Contains("Install Now", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName        = "open",
+                    ArgumentList    = { dmgPath },
+                    UseShellExecute = false,
+                    CreateNoWindow  = true
+                });
+            }
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UpdateCheck] OfferInstall error: {ex.Message}");
+        }
     }
 
     private async Task CheckOpenClawNpmVersionAsync()
@@ -1029,6 +1116,10 @@ public class TrayApplication : IDisposable
         _systemPostureMonitor?.Dispose();
         _cronJobMonitor?.Dispose();
         _systemExtensionMonitor?.Dispose();
+
+        _updateCts?.Cancel();
+        _updateCts?.Dispose();
+        _updateCts = null;
 
         if (_trayIcon != null)
         {
