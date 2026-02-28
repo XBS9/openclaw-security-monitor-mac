@@ -51,4 +51,10 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
+  <!-- Exclude test project from main build (SDK-style projects glob all *.cs recursively) -->
+  <ItemGroup>
+    <Compile Remove="OpenClawSecurityMonitorMac.Tests\**" />
+    <Compile Remove="Tests\**" />
+  </ItemGroup>
+
 </Project>

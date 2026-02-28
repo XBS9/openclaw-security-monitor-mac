@@ -53,7 +53,7 @@ public class CronJobMonitor : IDisposable
     {
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(20), ct);
+            await Task.Delay(TimeSpan.FromSeconds(Math.Min(20, _settings.CronJobCheckInterval)), ct);
             await CheckAsync();
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.CronJobCheckInterval));
             while (await timer.WaitForNextTickAsync(ct))
@@ -91,7 +91,7 @@ public class CronJobMonitor : IDisposable
             {
                 _baseline = entries;
                 _hub.Report(MonitorHub.CronJobs, MonitorState.Ok,
-                    $"Baseline set ({entries.Count} entries)");
+                    entries.Count == 0 ? "No cron jobs" : $"Baseline set ({entries.Count} entries)");
                 return;
             }
 

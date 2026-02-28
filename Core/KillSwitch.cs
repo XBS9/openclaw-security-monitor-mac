@@ -7,7 +7,7 @@ namespace OpenClawSecurityMonitorMac.Core;
 
 public class KillSwitch
 {
-    private readonly GatewayService _gateway;
+    private readonly IGatewayService _gateway;
     private readonly TraySettings _settings;
     private readonly object _lock = new();
     private bool _engaged;
@@ -23,7 +23,7 @@ public class KillSwitch
 
     public int UnreviewedCount { get; private set; }
 
-    public KillSwitch(GatewayService gateway, TraySettings settings)
+    public KillSwitch(IGatewayService gateway, TraySettings settings)
     {
         _gateway  = gateway;
         _settings = settings;
@@ -110,9 +110,19 @@ public class KillSwitch
         [property: JsonPropertyName("details")]   string Details,
         [property: JsonPropertyName("action")]    string Action);
 
-    private string StatePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                     ".openclaw", "kill-switch-state.json");
+    private string StatePath
+    {
+        get
+        {
+            // Co-locate state file with the log file so tests can redirect both
+            // by setting TrayLogPath to a temp directory.
+            var logDir = Path.GetDirectoryName(PathUtils.ExpandFull(_settings.TrayLogPath));
+            var dir    = string.IsNullOrEmpty(logDir)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".openclaw")
+                : logDir;
+            return Path.Combine(dir, "kill-switch-state.json");
+        }
+    }
 
     private void LoadState()
     {

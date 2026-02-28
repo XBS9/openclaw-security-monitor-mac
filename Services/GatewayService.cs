@@ -19,7 +19,7 @@ namespace OpenClawSecurityMonitorMac.Services;
 ///   ai.openclaw.gateway.hardened.plist — hardened template (score 3.3)
 ///   ai.openclaw.gateway.unlocked.plist — unlocked template (score 6.7)
 /// </summary>
-public class GatewayService
+public class GatewayService : OpenClawSecurityMonitorMac.Core.IGatewayService
 {
     private readonly ICommandService _cmd;
     private readonly TraySettings _settings;

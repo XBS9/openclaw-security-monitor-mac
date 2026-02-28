@@ -85,7 +85,15 @@ public class MonitorHub
     {
         lock (_lock)
         {
-            return _statuses.Values.ToList();
+            // Return value-copies so callers get a snapshot that won't change
+            // as subsequent Report() calls mutate the live MonitorStatus objects.
+            return _statuses.Values.Select(s => new MonitorStatus
+            {
+                Name        = s.Name,
+                State       = s.State,
+                Detail      = s.Detail,
+                LastChecked = s.LastChecked
+            }).ToList();
         }
     }
 }

@@ -52,7 +52,7 @@ public class LaunchAgentScanMonitor : IDisposable
     {
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(30), ct);
+            await Task.Delay(TimeSpan.FromSeconds(Math.Min(30, _settings.LaunchAgentCheckInterval)), ct);
             await CheckAsync();
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.LaunchAgentCheckInterval));
             while (await timer.WaitForNextTickAsync(ct))
@@ -91,12 +91,14 @@ public class LaunchAgentScanMonitor : IDisposable
                 var names = string.Join(", ", newAgents.Take(3));
                 if (newAgents.Count > 3) names += $" +{newAgents.Count - 3} more";
 
-                _hub.Report(MonitorHub.LaunchAgents, MonitorState.Alert,
-                    $"New agent: {names}");
-
+                // Fire kill switch BEFORE reporting alert so the gateway is locked
+                // before the alert state is visible to polling observers.
                 await _killSwitch.FireAsync("LaunchAgentScanMonitor",
                     $"New LaunchAgent: {newAgents[0]}",
                     $"Unknown persistence plist(s) added to ~/Library/LaunchAgents: {string.Join(", ", newAgents)}");
+
+                _hub.Report(MonitorHub.LaunchAgents, MonitorState.Alert,
+                    $"New agent: {names}");
 
                 // Absorb so we don't re-fire for the same plist on every cycle
                 _baseline.UnionWith(newAgents);

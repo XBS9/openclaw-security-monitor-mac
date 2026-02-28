@@ -54,7 +54,7 @@ public class SystemExtensionMonitor : IDisposable
     {
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(25), ct);
+            await Task.Delay(TimeSpan.FromSeconds(Math.Min(25, _settings.SystemExtensionCheckInterval)), ct);
             await CheckAsync();
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.SystemExtensionCheckInterval));
             while (await timer.WaitForNextTickAsync(ct))

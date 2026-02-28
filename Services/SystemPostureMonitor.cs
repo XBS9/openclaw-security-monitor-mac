@@ -57,7 +57,7 @@ public class SystemPostureMonitor : IDisposable
     {
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(15), ct);
+            await Task.Delay(TimeSpan.FromSeconds(Math.Min(15, _settings.SystemPostureCheckInterval)), ct);
             await CheckAsync();
             using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.SystemPostureCheckInterval));
             while (await timer.WaitForNextTickAsync(ct))
