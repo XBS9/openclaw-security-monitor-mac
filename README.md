@@ -13,9 +13,9 @@ A free, open-source macOS menu-bar app that continuously watches your Mac for si
 
 ## Download
 
-**[→ Download OpenClawMonitor-1.5.2.zip](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClawMonitor-1.5.2.zip)**
+**[→ Download OpenClawMonitor-1.5.2.dmg](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClawMonitor-1.5.2.dmg)**
 
-Requires macOS 12+. See the [User Guide](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClaw-Security-Monitor-Guide.pdf) for installation steps.
+Requires macOS 12+. Open the DMG and drag `OpenClawMonitor` to your Applications folder. See the [User Guide](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClaw-Security-Monitor-Guide.pdf) for full installation steps.
 
 ---
 
@@ -54,14 +54,24 @@ Dashboard shows a live 0–100 security score and a 24-reading sparkline (`▁�
 
 Optional SMTP email notification on every kill switch event — works with Gmail, Outlook, or any SMTP server.
 
+### Auto-Updates
+
+The app checks for new releases automatically — once on launch and every 24 hours. When a newer version is found it downloads the DMG silently in the background, then shows a prompt:
+
+> **Update Ready** — OpenClaw Monitor v1.5.3 has been downloaded.
+> `[ Later ]` `[ Install Now ]`
+
+Clicking **Install Now** opens the disk image so you can drag the new version to Applications. No manual download required.
+
 ---
 
 ## Quick Start
 
-1. Download and unzip `OpenClawMonitor-1.5.2.zip`
-2. Move `OpenClawMonitor.app` to `/Applications`
+1. Download `OpenClawMonitor-1.5.2.dmg`
+2. Open the DMG and drag `OpenClawMonitor` to `/Applications`
 3. **Right-click → Open** on first launch (app is not notarized)
 4. App runs as a menu-bar icon — no Dock icon
+5. Future updates install automatically with one click
 
 Full instructions in the [User Guide (PDF)](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClaw-Security-Monitor-Guide.pdf).
 
