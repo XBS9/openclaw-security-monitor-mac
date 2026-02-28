@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>OpenClawSecurityMonitorMac</AssemblyName>
     <RootNamespace>OpenClawSecurityMonitorMac</RootNamespace>
-    <Version>1.5.2</Version>
-    <AssemblyVersion>1.5.2.0</AssemblyVersion>
-    <FileVersion>1.5.2.0</FileVersion>
+    <Version>1.5.3</Version>
+    <AssemblyVersion>1.5.3.0</AssemblyVersion>
+    <FileVersion>1.5.3.0</FileVersion>
 
     <!-- macOS single-file publish -->
     <!-- RID defaults to osx-x64 (Intel). Override at publish time:           -->
@@ -28,8 +28,8 @@
     <ApplicationId>com.openclaw.security-monitor</ApplicationId>
     <CFBundleDisplayName>OpenClaw Security Monitor</CFBundleDisplayName>
     <CFBundleIdentifier>com.openclaw.security-monitor</CFBundleIdentifier>
-    <CFBundleVersion>1.5.2</CFBundleVersion>
-    <CFBundleShortVersionString>1.5.2</CFBundleShortVersionString>
+    <CFBundleVersion>1.5.3</CFBundleVersion>
+    <CFBundleShortVersionString>1.5.3</CFBundleShortVersionString>
 
     <Company>OpenClaw</Company>
     <Product>OpenClaw Security Monitor</Product>

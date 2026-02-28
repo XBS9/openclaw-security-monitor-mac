@@ -1,5 +1,5 @@
 # OpenClaw Security Monitor
-## User Guide — v1.5.2
+## User Guide — v1.5.3
 
 ---
 
@@ -13,7 +13,7 @@ A free, open-source macOS menu-bar app that continuously watches your Mac for si
 
 ## Installation
 
-1. Download `OpenClawMonitor-1.5.2.dmg` from the [GitHub releases page](https://github.com/XBS9/openclaw-security-monitor-mac/releases)
+1. Download `OpenClawMonitor-1.5.3.dmg` from the [GitHub releases page](https://github.com/XBS9/openclaw-security-monitor-mac/releases)
 2. Open the DMG — drag `OpenClawMonitor` to `/Applications`
 3. **First launch:** right-click → **Open** (bypasses Gatekeeper — app is not notarized)
 4. The app appears as a menu-bar icon. No Dock icon by design.
@@ -179,5 +179,5 @@ Settings are protected with a SHA-256 integrity sidecar. If the file is tampered
 
 ---
 
-*OpenClaw Security Monitor v1.5.2 — MIT License*
+*OpenClaw Security Monitor v1.5.3 — MIT License*
 *https://github.com/XBS9/openclaw-security-monitor-mac*

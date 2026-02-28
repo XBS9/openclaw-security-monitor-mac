@@ -6,16 +6,16 @@ A free, open-source macOS menu-bar app that continuously watches your Mac for si
 
 ## 📄 Documentation
 
-**[User Guide & Technical Reference (PDF)](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClaw-Security-Monitor-Guide.pdf)**
+**[User Guide & Technical Reference (PDF)](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.3/OpenClaw-Security-Monitor-Guide.pdf)**
 — Full installation instructions, all 16 monitors explained, settings reference, limitations, FAQ, and troubleshooting.
 
 ---
 
 ## Download
 
-**[→ Download OpenClawMonitor-1.5.2.dmg](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClawMonitor-1.5.2.dmg)**
+**[→ Download OpenClawMonitor-1.5.3.dmg](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.3/OpenClawMonitor-1.5.3.dmg)**
 
-Requires macOS 12+. Open the DMG and drag `OpenClawMonitor` to your Applications folder. See the [User Guide](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClaw-Security-Monitor-Guide.pdf) for full installation steps.
+Requires macOS 12+. Open the DMG and drag `OpenClawMonitor` to your Applications folder. See the [User Guide](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.3/OpenClaw-Security-Monitor-Guide.pdf) for full installation steps.
 
 ---
 
@@ -67,13 +67,13 @@ Clicking **Install Now** opens the disk image so you can drag the new version to
 
 ## Quick Start
 
-1. Download `OpenClawMonitor-1.5.2.dmg`
+1. Download `OpenClawMonitor-1.5.3.dmg`
 2. Open the DMG and drag `OpenClawMonitor` to `/Applications`
 3. **Right-click → Open** on first launch (app is not notarized)
 4. App runs as a menu-bar icon — no Dock icon
 5. Future updates install automatically with one click
 
-Full instructions in the [User Guide (PDF)](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.2/OpenClaw-Security-Monitor-Guide.pdf).
+Full instructions in the [User Guide (PDF)](https://github.com/XBS9/openclaw-security-monitor-mac/releases/download/v1.5.3/OpenClaw-Security-Monitor-Guide.pdf).
 
 ---
 
