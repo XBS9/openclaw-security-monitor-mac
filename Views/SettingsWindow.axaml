@@ -222,6 +222,12 @@
                         <TextBlock Text="Webhook URL (n8n, Slack, etc.)" Classes="label" Margin="0,4,0,0"/>
                         <TextBox Text="{Binding WebhookAlertUrl}"
                                  Watermark="https://n8n.example.com/webhook/openclaw-alert"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+                            <Button Content="Test Webhook" Command="{Binding TestWebhookCommand}"/>
+                            <TextBlock Text="{Binding WebhookTestStatus}" FontSize="12"
+                                       Foreground="#9090A8" VerticalAlignment="Center"
+                                       IsVisible="{Binding WebhookTestStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

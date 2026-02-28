@@ -41,6 +41,7 @@ public partial class SettingsViewModel : ObservableObject
     // ── Webhook alerting ───────────────────────────────────────────────────
     [ObservableProperty] private bool _webhookAlertsEnabled;
     [ObservableProperty] private string _webhookAlertUrl = "";
+    [ObservableProperty] private string _webhookTestStatus = "";
 
     // ── Daily digest ───────────────────────────────────────────────────────
     [ObservableProperty] private bool _dailyDigestEnabled;
@@ -162,6 +163,50 @@ public partial class SettingsViewModel : ObservableObject
         DailyDigestEnabled     = d.DailyDigestEnabled;
         DailyDigestHour        = d.DailyDigestHour;
         SaveStatus = "Defaults restored — click Save to apply";
+    }
+
+    [RelayCommand]
+    private async Task TestWebhook()
+    {
+        if (string.IsNullOrWhiteSpace(WebhookAlertUrl))
+        {
+            WebhookTestStatus = "⚠ Enter a webhook URL first";
+            await Task.Delay(3000);
+            WebhookTestStatus = "";
+            return;
+        }
+
+        WebhookTestStatus = "Sending test…";
+        try
+        {
+            var testEvt = new OpenClawSecurityMonitorMac.Models.SecurityEvent
+            {
+                Timestamp = DateTime.Now,
+                Monitor   = "WebhookTest",
+                Trigger   = "Test webhook from OpenClaw Security Monitor",
+                Details   = "This is a test alert fired from Settings.",
+                Action    = "TEST"
+            };
+
+            // Temporarily enable and send, regardless of the checkbox state
+            var svc = new OpenClawSecurityMonitorMac.Services.WebhookAlertService(
+                new OpenClawSecurityMonitorMac.Core.TraySettings
+                {
+                    WebhookAlertsEnabled = true,
+                    WebhookAlertUrl      = WebhookAlertUrl
+                });
+            svc.SendAlert(testEvt);
+
+            await Task.Delay(2000); // give the fire-and-forget time to complete
+            WebhookTestStatus = "✓ Test sent";
+        }
+        catch (Exception ex)
+        {
+            WebhookTestStatus = $"✗ {ex.Message}";
+        }
+
+        await Task.Delay(4000);
+        WebhookTestStatus = "";
     }
 
     [RelayCommand]
