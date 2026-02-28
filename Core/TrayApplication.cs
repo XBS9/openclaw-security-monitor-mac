@@ -89,6 +89,7 @@ public class TrayApplication : IDisposable
             Dispatcher.UIThread.InvokeAsync(ShowDashboard);
 
         _ = StartUpdateCheckAsync();
+        _ = CheckStaleKillSwitchOnStartupAsync();
     }
 
     // -------------------------------------------------------------------------
@@ -599,14 +600,146 @@ public class TrayApplication : IDisposable
         _settingsWindow.Show();
     }
 
+    // -------------------------------------------------------------------------
+    // Startup: stale kill switch reconciliation
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// If the kill switch state file says engaged=true but the actual gateway
+    /// plist is not hardened (e.g. gateway was manually recovered via CLI without
+    /// acknowledging the alert), prompt the user to choose:
+    ///   • Re-lock Gateway   — re-applies the hardened plist
+    ///   • Acknowledge       — clears the engaged state, resumes normal monitoring
+    /// Runs after a short delay so monitors have time to get the first status read.
+    /// </summary>
+    private async Task CheckStaleKillSwitchOnStartupAsync()
+    {
+        if (!_killSwitch.IsEngaged) return;
+
+        // Wait for the first gateway status poll to complete
+        await Task.Delay(TimeSpan.FromSeconds(6));
+
+        var status = await _gateway.GetStatusAsync();
+        if (status.Mode == GatewayMode.Locked) return; // actually locked — nothing stale
+
+        // Kill switch engaged but gateway is not in hardened mode.
+        // Build a dialog describing what happened.
+        var lastEvt   = _killSwitch.Events.LastOrDefault();
+        var triggerMsg = lastEvt != null
+            ? Escape($"{lastEvt.Trigger}\n{lastEvt.Details}")
+            : "Unknown trigger";
+
+        var script =
+            "button returned of (display dialog " +
+            $"\"Security Alert\\n\\nThe kill switch was triggered but the gateway is currently running UNLOCKED.\\n\\n" +
+            $"Trigger: {triggerMsg}\\n\\n" +
+            $"The gateway may have been manually recovered without acknowledging this alert.\\n\\n" +
+            $"What would you like to do?\" " +
+            "buttons {\"Re-lock Gateway\", \"Acknowledge & Continue\"} " +
+            "default button \"Re-lock Gateway\" " +
+            "with title \"OpenClaw Security Monitor — Action Required\" " +
+            "with icon caution)";
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "osascript",
+            UseShellExecute        = false,
+            CreateNoWindow         = true,
+            RedirectStandardOutput = true
+        };
+        psi.ArgumentList.Add("-e");
+        psi.ArgumentList.Add(script);
+
+        try
+        {
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc == null) return;
+            var choice = (await proc.StandardOutput.ReadToEndAsync()).Trim();
+            await proc.WaitForExitAsync();
+
+            if (choice == "Re-lock Gateway")
+            {
+                await _gateway.LockAsync();
+            }
+            else
+            {
+                // User acknowledged — clear engaged state
+                _killSwitch.Disengage();
+                _killSwitch.ClearAlerts();
+                _patchWarning = false;
+            }
+
+            await RefreshStatusNowAsync();
+            _ = Dispatcher.UIThread.InvokeAsync(ShowDashboard);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TrayApp] StaleKillSwitchCheck failed: {ex.Message}");
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Sudo-gated exit
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Requires administrator authentication before allowing the monitor to quit.
+    /// Prevents someone with physical access from bypassing monitoring by just
+    /// clicking Quit. Uses osascript to trigger macOS's native auth dialog.
+    /// </summary>
+    private async Task<bool> AuthenticateForQuitAsync()
+    {
+        const string script =
+            "do shell script \"echo authorized\" with administrator privileges";
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName               = "osascript",
+            UseShellExecute        = false,
+            CreateNoWindow         = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError  = true
+        };
+        psi.ArgumentList.Add("-e");
+        psi.ArgumentList.Add(script);
+
+        try
+        {
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc == null) return false;
+            await proc.WaitForExitAsync();
+            return proc.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private void ExitApp()
     {
-        Dispose();
-        if (Application.Current?.ApplicationLifetime
-            is IClassicDesktopStyleApplicationLifetime desktop)
+        _ = ExitAppAsync();
+    }
+
+    private async Task ExitAppAsync()
+    {
+        bool authorized = await AuthenticateForQuitAsync();
+        if (!authorized)
         {
-            desktop.Shutdown();
+            ShowNotification("Quit Denied",
+                "Administrator authentication required to stop the security monitor.");
+            return;
         }
+
+        Dispose();
+        _ = Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (Application.Current?.ApplicationLifetime
+                is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.Shutdown();
+            }
+        });
     }
 
     // -------------------------------------------------------------------------
