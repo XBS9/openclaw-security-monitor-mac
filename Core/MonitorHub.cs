@@ -23,15 +23,19 @@ public class MonitorHub
 
     public event Action? Updated;
 
-    public static readonly string Gateway     = "Gateway Health";
-    public static readonly string FileIntegrity = "File Integrity";
-    public static readonly string AlertLog    = "Alert Log";
-    public static readonly string Egress      = "Egress Rules";
-    public static readonly string Patches     = "Auth Patches";
-    public static readonly string Namespace   = "Namespace Isolation";
-    public static readonly string Permissions = "Config Permissions";
-    public static readonly string Exposure    = "Network Exposure";
-    public static readonly string TokenAge    = "Token Age";
+    public static readonly string Gateway         = "Gateway Health";
+    public static readonly string FileIntegrity   = "File Integrity";
+    public static readonly string AlertLog        = "Alert Log";
+    public static readonly string Egress          = "Egress Rules";
+    public static readonly string Patches         = "Auth Patches";
+    public static readonly string Namespace       = "Namespace Isolation";
+    public static readonly string Permissions     = "Config Permissions";
+    public static readonly string Exposure        = "Network Exposure";
+    public static readonly string TokenAge        = "Token Age";
+    public static readonly string LaunchAgents    = "Launch Agents";
+    public static readonly string BinaryIntegrity = "Binary Integrity";
+    public static readonly string TccPermissions  = "TCC Permissions";
+    public static readonly string SudoLog         = "Sudo Activity";
 
     public MonitorHub()
     {
@@ -44,6 +48,10 @@ public class MonitorHub
         Register(Permissions);
         Register(Exposure);
         Register(TokenAge);
+        Register(LaunchAgents);
+        Register(BinaryIntegrity);
+        Register(TccPermissions);
+        Register(SudoLog);
     }
 
     private void Register(string name)

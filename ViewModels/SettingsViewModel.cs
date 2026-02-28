@@ -38,6 +38,14 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _gatewayEnvPath = "";
     [ObservableProperty] private string _securityAlertsLogPath = "";
 
+    // ── Webhook alerting ───────────────────────────────────────────────────
+    [ObservableProperty] private bool _webhookAlertsEnabled;
+    [ObservableProperty] private string _webhookAlertUrl = "";
+
+    // ── Daily digest ───────────────────────────────────────────────────────
+    [ObservableProperty] private bool _dailyDigestEnabled;
+    [ObservableProperty] private int _dailyDigestHour;
+
     // ── Status ─────────────────────────────────────────────────────────────
     [ObservableProperty] private string _saveStatus = "";
 
@@ -76,6 +84,11 @@ public partial class SettingsViewModel : ObservableObject
         OpenClawConfigPath      = _settings.OpenClawConfigPath;
         GatewayEnvPath          = _settings.GatewayEnvPath;
         SecurityAlertsLogPath   = _settings.SecurityAlertsLogPath;
+
+        WebhookAlertsEnabled    = _settings.WebhookAlertsEnabled;
+        WebhookAlertUrl         = _settings.WebhookAlertUrl;
+        DailyDigestEnabled      = _settings.DailyDigestEnabled;
+        DailyDigestHour         = _settings.DailyDigestHour;
     }
 
     [RelayCommand]
@@ -105,6 +118,11 @@ public partial class SettingsViewModel : ObservableObject
         _settings.OpenClawConfigPath     = OpenClawConfigPath;
         _settings.GatewayEnvPath         = GatewayEnvPath;
         _settings.SecurityAlertsLogPath  = SecurityAlertsLogPath;
+
+        _settings.WebhookAlertsEnabled   = WebhookAlertsEnabled;
+        _settings.WebhookAlertUrl        = WebhookAlertUrl;
+        _settings.DailyDigestEnabled     = DailyDigestEnabled;
+        _settings.DailyDigestHour        = DailyDigestHour;
 
         _settings.Validate();
         _settings.Save();
@@ -139,6 +157,10 @@ public partial class SettingsViewModel : ObservableObject
         OpenClawConfigPath     = d.OpenClawConfigPath;
         GatewayEnvPath         = d.GatewayEnvPath;
         SecurityAlertsLogPath  = d.SecurityAlertsLogPath;
+        WebhookAlertsEnabled   = d.WebhookAlertsEnabled;
+        WebhookAlertUrl        = d.WebhookAlertUrl;
+        DailyDigestEnabled     = d.DailyDigestEnabled;
+        DailyDigestHour        = d.DailyDigestHour;
         SaveStatus = "Defaults restored — click Save to apply";
     }
 

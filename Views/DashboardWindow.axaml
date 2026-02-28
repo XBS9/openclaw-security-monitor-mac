@@ -113,6 +113,23 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Active connections (visible only when gateway has connections) -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40" BorderThickness="1" Padding="14"
+                        IsVisible="{Binding IsConnectionsVisible}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="ACTIVE CONNECTIONS" FontSize="10" Foreground="#505068" FontWeight="SemiBold"/>
+                        <ItemsControl ItemsSource="{Binding ActiveConnections}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontSize="11" Foreground="#4A7A8A"
+                                               FontFamily="SF Mono, Menlo, monospace"
+                                               Margin="0,2" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -138,13 +155,19 @@
                 </StackPanel>
                 <!-- Row 2: Navigation / info -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6">
-                    <Button Content="Security Log" Command="{Binding OpenLogCommand}" MinWidth="98"/>
-                    <Button Content="Auto-Patch"   Command="{Binding OpenPatchCommand}" MinWidth="86"/>
-                    <Button Content="Settings"     Command="{Binding OpenSettingsCommand}" MinWidth="74"/>
-                    <Button Content="About"        Command="{Binding OpenAboutCommand}" MinWidth="62"/>
-                    <Button Content="Quit"         Command="{Binding ExitCommand}"
-                            MinWidth="54" Foreground="#FF6B6B"/>
+                    <Button Content="Security Log"  Command="{Binding OpenLogCommand}"      MinWidth="90"/>
+                    <Button Content="Auto-Patch"    Command="{Binding OpenPatchCommand}"    MinWidth="80"/>
+                    <Button Content="Export Alerts" Command="{Binding ExportAlertsCommand}" MinWidth="96"/>
+                    <Button Content="Settings"      Command="{Binding OpenSettingsCommand}" MinWidth="68"/>
+                    <Button Content="About"         Command="{Binding OpenAboutCommand}"    MinWidth="56"/>
+                    <Button Content="Quit"          Command="{Binding ExitCommand}"
+                            MinWidth="48" Foreground="#FF6B6B"/>
                 </StackPanel>
+                <!-- Export status feedback -->
+                <TextBlock Text="{Binding ExportStatusText}"
+                           FontSize="11" HorizontalAlignment="Center"
+                           Foreground="#9090A8" FontFamily="SF Mono, Menlo, monospace"
+                           IsVisible="{Binding ExportStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
             </StackPanel>
         </Border>
 

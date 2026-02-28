@@ -39,6 +39,14 @@ public class TrayApplication : IDisposable
     private PermissionMonitor? _permissionMonitor;
     private ExposureMonitor? _exposureMonitor;
     private TokenAgeMonitor? _tokenAgeMonitor;
+    private LaunchAgentScanMonitor? _launchAgentScanMonitor;
+    private BinaryIntegrityMonitor? _binaryIntegrityMonitor;
+    private TccPermissionMonitor? _tccPermissionMonitor;
+    private SudoLogMonitor? _sudoLogMonitor;
+
+    private WebhookAlertService? _webhookAlertService;
+    private DateTime _lastDigestDate = DateTime.MinValue;
+    private Timer? _connectionsTimer;
 
     private GatewayStatus _currentStatus = new();
     private bool _patchWarning;
@@ -78,6 +86,7 @@ public class TrayApplication : IDisposable
             CreateTrayIcon();
         });
 
+        _webhookAlertService = new WebhookAlertService(_settings);
         _killSwitch.Triggered += OnKillSwitchTriggered;
         _monitorHub.Updated   += OnMonitorUpdated;
 
@@ -90,6 +99,8 @@ public class TrayApplication : IDisposable
 
         _ = StartUpdateCheckAsync();
         _ = CheckStaleKillSwitchOnStartupAsync();
+        _ = RunDailyDigestAsync();
+        StartConnectionsTimer();
     }
 
     // -------------------------------------------------------------------------
@@ -220,6 +231,10 @@ public class TrayApplication : IDisposable
         patchItem.Click += (_, _) => Dispatcher.UIThread.InvokeAsync(ShowPatchWindow);
         menu.Add(patchItem);
 
+        var exportItem = new NativeMenuItem("Export Alerts...");
+        exportItem.Click += (_, _) => ExportAlerts();
+        menu.Add(exportItem);
+
         menu.Add(new NativeMenuItemSeparator());
 
         var aboutItem = new NativeMenuItem("About...");
@@ -283,6 +298,18 @@ public class TrayApplication : IDisposable
 
         _tokenAgeMonitor = new TokenAgeMonitor(_bash, _settings, _monitorHub);
         _tokenAgeMonitor.Start();
+
+        _launchAgentScanMonitor = new LaunchAgentScanMonitor(_bash, _killSwitch, _settings, _monitorHub);
+        _launchAgentScanMonitor.Start();
+
+        _binaryIntegrityMonitor = new BinaryIntegrityMonitor(_bash, _settings, _monitorHub);
+        _binaryIntegrityMonitor.Start();
+
+        _tccPermissionMonitor = new TccPermissionMonitor(_bash, _monitorHub);
+        _tccPermissionMonitor.Start();
+
+        _sudoLogMonitor = new SudoLogMonitor(_bash, _settings, _monitorHub);
+        _sudoLogMonitor.Start();
     }
 
     // -------------------------------------------------------------------------
@@ -309,6 +336,8 @@ public class TrayApplication : IDisposable
 
     private void OnKillSwitchTriggered(SecurityEvent evt)
     {
+        _webhookAlertService?.SendAlert(evt);
+
         var lockedStatus = new GatewayStatus
         {
             IsRunning = _currentStatus.IsRunning,
@@ -498,6 +527,10 @@ public class TrayApplication : IDisposable
             _permissionMonitor?.Start();
             _exposureMonitor?.Start();
             _tokenAgeMonitor?.Start();
+            _launchAgentScanMonitor?.Start();
+            _binaryIntegrityMonitor?.Start();
+            _tccPermissionMonitor?.Start();
+            _sudoLogMonitor?.Start();
             _monitorsPaused = false;
             if (_pauseItem != null) _pauseItem.Header = "Pause Monitors (Maintenance)";
             ShowNotification("Monitors Resumed", "All security monitors are active.");
@@ -513,6 +546,10 @@ public class TrayApplication : IDisposable
             _permissionMonitor?.Stop();
             _exposureMonitor?.Stop();
             _tokenAgeMonitor?.Stop();
+            _launchAgentScanMonitor?.Stop();
+            _binaryIntegrityMonitor?.Stop();
+            _tccPermissionMonitor?.Stop();
+            _sudoLogMonitor?.Stop();
             _monitorsPaused = true;
             if (_pauseItem != null) _pauseItem.Header = "Resume Monitors";
             _autoResumeTimer?.Dispose();
@@ -770,18 +807,111 @@ public class TrayApplication : IDisposable
         s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
     // -------------------------------------------------------------------------
+    // Active connections display
+    // -------------------------------------------------------------------------
+
+    private void StartConnectionsTimer()
+    {
+        _connectionsTimer = new Timer(async _ =>
+        {
+            var (_, output, _) = await _bash.RunAsync(
+                "lsof -i TCP -n -P 2>/dev/null | grep -i 'node\\|openclaw' | awk '{print $1, $9}' | sort -u");
+            var connections = output
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrEmpty(l))
+                .ToList();
+            _ = Dispatcher.UIThread.InvokeAsync(() =>
+                _dashboardVm?.UpdateConnections(connections));
+        }, null, TimeSpan.FromSeconds(8), TimeSpan.FromSeconds(30));
+    }
+
+    // -------------------------------------------------------------------------
+    // Alert export
+    // -------------------------------------------------------------------------
+
+    private void ExportAlerts()
+    {
+        try
+        {
+            var events = _killSwitch.Events.ToList();
+            var report = new
+            {
+                ExportedAt = DateTime.Now,
+                Host       = Environment.MachineName,
+                User       = Environment.UserName,
+                Events     = events.Select(e => new
+                {
+                    e.Timestamp, e.Monitor, e.Trigger, e.Details, e.Action
+                })
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(report,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"openclaw-alerts-{DateTime.Now:yyyy-MM-dd-HHmmss}.json");
+
+            System.IO.File.WriteAllText(path, json);
+            ShowNotification("Alerts Exported",
+                $"Saved to Desktop/{System.IO.Path.GetFileName(path)}");
+        }
+        catch (Exception ex)
+        {
+            ShowNotification("Export Failed", ex.Message);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Daily digest notification
+    // -------------------------------------------------------------------------
+
+    private async Task RunDailyDigestAsync()
+    {
+        while (true)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(10));
+                if (!_settings.DailyDigestEnabled) continue;
+
+                var now = DateTime.Now;
+                if (now.Hour == _settings.DailyDigestHour && _lastDigestDate.Date < now.Date)
+                {
+                    _lastDigestDate = now;
+                    var all   = _monitorHub.GetAll();
+                    var ok    = all.Count(s => s.State == MonitorState.Ok);
+                    var warn  = all.Count(s => s.State == MonitorState.Warning);
+                    var alert = all.Count(s => s.State == MonitorState.Alert);
+                    var lastEvt = _killSwitch.Events.LastOrDefault();
+                    var evtStr  = lastEvt != null ? $"Last: {lastEvt.Trigger}" : "No events";
+                    ShowNotification("OpenClaw Daily Digest",
+                        $"Monitors: {ok} OK, {warn} warn, {alert} alert. {evtStr}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TrayApp] DailyDigest error: {ex.Message}");
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Update check
     // -------------------------------------------------------------------------
 
     private async Task StartUpdateCheckAsync()
     {
         await Task.Delay(TimeSpan.FromSeconds(10)); // don't slow startup
+
+        // Check monitor app update
         var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
         var current = v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
         var latest = await UpdateChecker.CheckAsync(current);
         if (latest != null)
         {
-            Dispatcher.UIThread.InvokeAsync(() =>
+            _ = Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (_updateItem != null)
                 {
@@ -791,6 +921,41 @@ public class TrayApplication : IDisposable
                 ShowNotification("Update Available",
                     $"OpenClaw Monitor v{latest} is available. Download from GitHub.");
             });
+        }
+
+        // Check openclaw npm package update
+        await CheckOpenClawNpmVersionAsync();
+    }
+
+    private async Task CheckOpenClawNpmVersionAsync()
+    {
+        try
+        {
+            var pkgPath = System.IO.Path.Combine(
+                PathUtils.ExpandFull(_settings.NpmGlobalPath),
+                "lib", "node_modules", "openclaw", "package.json");
+
+            if (!System.IO.File.Exists(pkgPath)) return;
+
+            var pkgJson   = System.IO.File.ReadAllText(pkgPath);
+            var pkgDoc    = System.Text.Json.JsonDocument.Parse(pkgJson);
+            var installed = pkgDoc.RootElement.GetProperty("version").GetString() ?? "";
+            if (string.IsNullOrEmpty(installed)) return;
+
+            // Fetch latest from npm registry (5s timeout)
+            var (_, regOut, _) = await _bash.RunAsync(
+                "curl -s --max-time 5 https://registry.npmjs.org/openclaw/latest 2>/dev/null " +
+                "| python3 -c \"import sys,json; print(json.load(sys.stdin).get('version',''))\" 2>/dev/null");
+
+            var latestNpm = regOut.Trim();
+            if (string.IsNullOrEmpty(latestNpm) || latestNpm == installed) return;
+
+            ShowNotification("OpenClaw Update Available",
+                $"openclaw {latestNpm} available (installed: {installed}). Run: npm install -g openclaw");
+        }
+        catch
+        {
+            // Best-effort — npm registry unreachable is not a fatal condition
         }
     }
 
@@ -810,6 +975,8 @@ public class TrayApplication : IDisposable
 
         _autoResumeTimer?.Dispose();
         _autoResumeTimer = null;
+        _connectionsTimer?.Dispose();
+        _connectionsTimer = null;
 
         _statusMonitor?.Dispose();
         _fileIntegrityMonitor?.Dispose();
@@ -820,6 +987,10 @@ public class TrayApplication : IDisposable
         _permissionMonitor?.Dispose();
         _exposureMonitor?.Dispose();
         _tokenAgeMonitor?.Dispose();
+        _launchAgentScanMonitor?.Dispose();
+        _binaryIntegrityMonitor?.Dispose();
+        _tccPermissionMonitor?.Dispose();
+        _sudoLogMonitor?.Dispose();
 
         if (_trayIcon != null)
         {

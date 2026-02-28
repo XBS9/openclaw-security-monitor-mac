@@ -119,6 +119,11 @@ public class TraySettings
         new() { Path = "~/.openclaw/agents/main/agent/auth-profiles.json", Critical = false, CheckPermissions = "600" },
         // JWT credentials (Codex/Anthropic tokens — high-value infostealer target)
         new() { Path = "~/.openclaw/agents/main/agent/auth.json",          Critical = false, CheckPermissions = "600" },
+        // SSH keys — infostealer and lateral-movement targets
+        new() { Path = "~/.ssh/authorized_keys", Critical = true },
+        new() { Path = "~/.ssh/id_rsa",          Critical = false, CheckPermissions = "600" },
+        new() { Path = "~/.ssh/id_ed25519",      Critical = false, CheckPermissions = "600" },
+        new() { Path = "~/.ssh/id_ecdsa",        Critical = false, CheckPermissions = "600" },
     };
 
     // Egress (macOS pf firewall)
@@ -133,6 +138,30 @@ public class TraySettings
 
     [JsonPropertyName("egressModePath")]
     public string EgressModePath { get; set; } = "~/.openclaw/egress-mode";
+
+    // New monitor intervals
+    [JsonPropertyName("launchAgentCheckInterval")]
+    public int LaunchAgentCheckInterval { get; set; } = 300;
+
+    [JsonPropertyName("binaryIntegrityCheckInterval")]
+    public int BinaryIntegrityCheckInterval { get; set; } = 300;
+
+    [JsonPropertyName("sudoLogCheckInterval")]
+    public int SudoLogCheckInterval { get; set; } = 60;
+
+    // Webhook alerting
+    [JsonPropertyName("webhookAlertsEnabled")]
+    public bool WebhookAlertsEnabled { get; set; } = false;
+
+    [JsonPropertyName("webhookAlertUrl")]
+    public string WebhookAlertUrl { get; set; } = "";
+
+    // Daily digest notification
+    [JsonPropertyName("dailyDigestEnabled")]
+    public bool DailyDigestEnabled { get; set; } = true;
+
+    [JsonPropertyName("dailyDigestHour")]
+    public int DailyDigestHour { get; set; } = 9;
 
     // Behavior
     [JsonPropertyName("startMinimized")]
@@ -192,8 +221,12 @@ public class TraySettings
         ExpectedPatchedFileCount = Clamp(ExpectedPatchedFileCount, 1,  50);
         PermissionCheckInterval  = Clamp(PermissionCheckInterval,  30, 3600);
         ExposureCheckInterval    = Clamp(ExposureCheckInterval,    30, 3600);
-        TokenAgeCheckInterval    = Clamp(TokenAgeCheckInterval,    300, 86400);
-        TokenMaxAgeDays          = Clamp(TokenMaxAgeDays,          7,  365);
+        TokenAgeCheckInterval         = Clamp(TokenAgeCheckInterval,         300, 86400);
+        TokenMaxAgeDays               = Clamp(TokenMaxAgeDays,               7,   365);
+        LaunchAgentCheckInterval      = Clamp(LaunchAgentCheckInterval,      30,  3600);
+        BinaryIntegrityCheckInterval  = Clamp(BinaryIntegrityCheckInterval,  30,  3600);
+        SudoLogCheckInterval          = Clamp(SudoLogCheckInterval,          30,  600);
+        DailyDigestHour               = Clamp(DailyDigestHour,               0,   23);
     }
 
     private void MigrateMonitoredFiles()

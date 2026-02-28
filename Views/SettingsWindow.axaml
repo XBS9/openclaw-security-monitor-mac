@@ -212,6 +212,34 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ── ALERTING ──────────────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="ALERTING" Classes="section"/>
+                        <CheckBox IsChecked="{Binding WebhookAlertsEnabled}"
+                                  Content="Send webhook alert when kill switch fires"/>
+                        <TextBlock Text="Webhook URL (n8n, Slack, etc.)" Classes="label" Margin="0,4,0,0"/>
+                        <TextBox Text="{Binding WebhookAlertUrl}"
+                                 Watermark="https://n8n.example.com/webhook/openclaw-alert"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── NOTIFICATIONS ─────────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="NOTIFICATIONS" Classes="section"/>
+                        <CheckBox IsChecked="{Binding DailyDigestEnabled}"
+                                  Content="Send daily digest notification"/>
+                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto">
+                            <TextBlock Grid.Column="0" Text="Digest hour (0–23)" Classes="label"/>
+                            <NumericUpDown Grid.Column="2" Value="{Binding DailyDigestHour}"
+                                          Minimum="0" Maximum="23" Increment="1" FormatString="0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
 

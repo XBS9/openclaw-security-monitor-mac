@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -77,6 +78,13 @@ public partial class DashboardViewModel : ObservableObject
 
     public ObservableCollection<MonitorStatusItem> MonitorStatuses { get; } = new();
     public ObservableCollection<string> RecentEvents { get; } = new();
+    public ObservableCollection<string> ActiveConnections { get; } = new();
+
+    [ObservableProperty]
+    private bool _isConnectionsVisible;
+
+    [ObservableProperty]
+    private string _exportStatusText = "";
 
     [ObservableProperty]
     private string _versionText = GetVersionText();
@@ -129,6 +137,10 @@ public partial class DashboardViewModel : ObservableObject
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Config Permissions",  Status = "Starting..." });
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Network Exposure",    Status = "Starting..." });
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Token Age",           Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Launch Agents",       Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Binary Integrity",    Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "TCC Permissions",     Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Sudo Activity",       Status = "Starting..." });
     }
 
     public void UpdateStatus(GatewayStatus status)
@@ -319,5 +331,64 @@ public partial class DashboardViewModel : ObservableObject
     {
         _togglePauseAction();
         PauseButtonText = _isPausedFunc() ? "Resume Monitors" : "Pause Monitors";
+    }
+
+    public void UpdateConnections(List<string> connections)
+    {
+        ActiveConnections.Clear();
+        if (connections.Count == 0)
+        {
+            IsConnectionsVisible = false;
+            return;
+        }
+        foreach (var c in connections)
+            ActiveConnections.Add(c);
+        IsConnectionsVisible = true;
+    }
+
+    [RelayCommand]
+    private async Task ExportAlerts()
+    {
+        try
+        {
+            var events   = _killSwitch.Events.ToList();
+            var statuses = _killSwitch.Events.Count == 0
+                ? new List<object>()
+                : new List<object>();
+
+            var report = new
+            {
+                ExportedAt = DateTime.Now,
+                Host       = Environment.MachineName,
+                User       = Environment.UserName,
+                Events     = events.Select(e => new
+                {
+                    e.Timestamp,
+                    e.Monitor,
+                    e.Trigger,
+                    e.Details,
+                    e.Action
+                }),
+            };
+
+            var json = JsonSerializer.Serialize(report,
+                new JsonSerializerOptions { WriteIndented = true });
+
+            var path = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"openclaw-alerts-{DateTime.Now:yyyy-MM-dd-HHmmss}.json");
+
+            await System.IO.File.WriteAllTextAsync(path, json);
+
+            ExportStatusText = $"✓ Saved to Desktop/{System.IO.Path.GetFileName(path)}";
+            await Task.Delay(5000);
+            ExportStatusText = "";
+        }
+        catch (Exception ex)
+        {
+            ExportStatusText = $"✗ Export failed: {ex.Message}";
+            await Task.Delay(4000);
+            ExportStatusText = "";
+        }
     }
 }
