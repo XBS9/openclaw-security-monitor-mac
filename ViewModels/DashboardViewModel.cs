@@ -137,12 +137,21 @@ public partial class DashboardViewModel : ObservableObject
 
         if (_killSwitch.IsEngaged)
         {
-            StatusTitle  = "ALERT — Gateway Locked";
-            StatusDetail = "Kill switch triggered. Review alerts before unlocking.";
+            // Check actual plist state — the gateway may have been manually recovered
+            // (e.g. via `openclaw gateway install --force`) without clearing the kill switch.
+            // Show what is actually true rather than always claiming "Gateway Locked".
+            bool actuallyLocked = status.Mode == GatewayMode.Locked;
+
+            StatusTitle  = actuallyLocked
+                ? "ALERT — Gateway Locked"
+                : "ALERT — Running (unreviewed)";
+            StatusDetail = actuallyLocked
+                ? "Kill switch triggered. Review alerts before unlocking."
+                : "Alert unreviewed. Gateway was manually recovered — click Unlock to acknowledge.";
             StatusColor  = Color.FromRgb(220, 50, 50);
-            ScoreDisplay = "3.3";
+            ScoreDisplay = actuallyLocked ? "3.3" : "--";
             ScoreBrush   = new SolidColorBrush(Color.FromRgb(200, 80, 80));
-            LockButtonText = "Unlock Gateway";
+            LockButtonText = actuallyLocked ? "Unlock Gateway" : "Acknowledge Alert";
 
             var lastEvt = _killSwitch.Events.LastOrDefault();
             AlertBannerText  = lastEvt != null
