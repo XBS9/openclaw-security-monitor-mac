@@ -32,10 +32,13 @@ public class MonitorHub
     public static readonly string Permissions     = "Config Permissions";
     public static readonly string Exposure        = "Network Exposure";
     public static readonly string TokenAge        = "Token Age";
-    public static readonly string LaunchAgents    = "Launch Agents";
-    public static readonly string BinaryIntegrity = "Binary Integrity";
-    public static readonly string TccPermissions  = "TCC Permissions";
-    public static readonly string SudoLog         = "Sudo Activity";
+    public static readonly string LaunchAgents      = "Launch Agents";
+    public static readonly string BinaryIntegrity   = "Binary Integrity";
+    public static readonly string TccPermissions    = "TCC Permissions";
+    public static readonly string SudoLog           = "Sudo Activity";
+    public static readonly string SystemPosture     = "System Posture";
+    public static readonly string CronJobs          = "Cron Jobs";
+    public static readonly string SystemExtensions  = "System Extensions";
 
     public MonitorHub()
     {
@@ -52,6 +55,9 @@ public class MonitorHub
         Register(BinaryIntegrity);
         Register(TccPermissions);
         Register(SudoLog);
+        Register(SystemPosture);
+        Register(CronJobs);
+        Register(SystemExtensions);
     }
 
     private void Register(string name)

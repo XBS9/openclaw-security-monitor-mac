@@ -43,8 +43,12 @@ public class TrayApplication : IDisposable
     private BinaryIntegrityMonitor? _binaryIntegrityMonitor;
     private TccPermissionMonitor? _tccPermissionMonitor;
     private SudoLogMonitor? _sudoLogMonitor;
+    private SystemPostureMonitor? _systemPostureMonitor;
+    private CronJobMonitor? _cronJobMonitor;
+    private SystemExtensionMonitor? _systemExtensionMonitor;
 
     private WebhookAlertService? _webhookAlertService;
+    private EmailAlertService? _emailAlertService;
     private DateTime _lastDigestDate = DateTime.MinValue;
     private Timer? _connectionsTimer;
 
@@ -87,6 +91,7 @@ public class TrayApplication : IDisposable
         });
 
         _webhookAlertService = new WebhookAlertService(_settings);
+        _emailAlertService   = new EmailAlertService(_settings);
         _killSwitch.Triggered += OnKillSwitchTriggered;
         _monitorHub.Updated   += OnMonitorUpdated;
 
@@ -242,6 +247,20 @@ public class TrayApplication : IDisposable
         menu.Add(aboutItem);
 
         _updateItem = new NativeMenuItem("") { IsVisible = false };
+        _updateItem.Click += (_, _) =>
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName        = "open",
+                    ArgumentList    = { "https://github.com/XBS9/openclaw-security-monitor-mac/releases" },
+                    UseShellExecute = false,
+                    CreateNoWindow  = true
+                });
+            }
+            catch { }
+        };
         menu.Add(_updateItem);
 
         var settingsItem = new NativeMenuItem("Settings");
@@ -310,6 +329,15 @@ public class TrayApplication : IDisposable
 
         _sudoLogMonitor = new SudoLogMonitor(_bash, _settings, _monitorHub);
         _sudoLogMonitor.Start();
+
+        _systemPostureMonitor = new SystemPostureMonitor(_bash, _killSwitch, _settings, _monitorHub);
+        _systemPostureMonitor.Start();
+
+        _cronJobMonitor = new CronJobMonitor(_bash, _settings, _monitorHub);
+        _cronJobMonitor.Start();
+
+        _systemExtensionMonitor = new SystemExtensionMonitor(_bash, _settings, _monitorHub);
+        _systemExtensionMonitor.Start();
     }
 
     // -------------------------------------------------------------------------
@@ -337,6 +365,7 @@ public class TrayApplication : IDisposable
     private void OnKillSwitchTriggered(SecurityEvent evt)
     {
         _webhookAlertService?.SendAlert(evt);
+        _emailAlertService?.SendAlert(evt);
 
         var lockedStatus = new GatewayStatus
         {
@@ -531,6 +560,9 @@ public class TrayApplication : IDisposable
             _binaryIntegrityMonitor?.Start();
             _tccPermissionMonitor?.Start();
             _sudoLogMonitor?.Start();
+            _systemPostureMonitor?.Start();
+            _cronJobMonitor?.Start();
+            _systemExtensionMonitor?.Start();
             _monitorsPaused = false;
             if (_pauseItem != null) _pauseItem.Header = "Pause Monitors (Maintenance)";
             ShowNotification("Monitors Resumed", "All security monitors are active.");
@@ -550,6 +582,9 @@ public class TrayApplication : IDisposable
             _binaryIntegrityMonitor?.Stop();
             _tccPermissionMonitor?.Stop();
             _sudoLogMonitor?.Stop();
+            _systemPostureMonitor?.Stop();
+            _cronJobMonitor?.Stop();
+            _systemExtensionMonitor?.Stop();
             _monitorsPaused = true;
             if (_pauseItem != null) _pauseItem.Header = "Resume Monitors";
             _autoResumeTimer?.Dispose();
@@ -991,6 +1026,9 @@ public class TrayApplication : IDisposable
         _binaryIntegrityMonitor?.Dispose();
         _tccPermissionMonitor?.Dispose();
         _sudoLogMonitor?.Dispose();
+        _systemPostureMonitor?.Dispose();
+        _cronJobMonitor?.Dispose();
+        _systemExtensionMonitor?.Dispose();
 
         if (_trayIcon != null)
         {

@@ -103,7 +103,7 @@
                         <TextBlock Text="MONITOR INTERVALS (seconds)" Classes="section"/>
 
                         <!-- Helper row macro: label left, spinner right -->
-                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto">
+                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto">
 
                             <TextBlock Grid.Row="0"  Grid.Column="0" Text="Gateway Health"        Classes="label"/>
                             <NumericUpDown Grid.Row="0"  Grid.Column="2" Value="{Binding StatusPollInterval}"
@@ -140,6 +140,18 @@
                             <TextBlock Grid.Row="16" Grid.Column="0" Text="Token Age (seconds)"   Classes="label"/>
                             <NumericUpDown Grid.Row="16" Grid.Column="2" Value="{Binding TokenAgeCheckInterval}"
                                           Minimum="300" Maximum="86400" Increment="3600" FormatString="0"/>
+
+                            <TextBlock Grid.Row="18" Grid.Column="0" Text="System Posture"        Classes="label"/>
+                            <NumericUpDown Grid.Row="18" Grid.Column="2" Value="{Binding SystemPostureCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="20" Grid.Column="0" Text="Cron Jobs"             Classes="label"/>
+                            <NumericUpDown Grid.Row="20" Grid.Column="2" Value="{Binding CronJobCheckInterval}"
+                                          Minimum="30" Maximum="3600" Increment="30" FormatString="0"/>
+
+                            <TextBlock Grid.Row="22" Grid.Column="0" Text="System Extensions"     Classes="label"/>
+                            <NumericUpDown Grid.Row="22" Grid.Column="2" Value="{Binding SystemExtensionCheckInterval}"
+                                          Minimum="60" Maximum="3600" Increment="60" FormatString="0"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -228,6 +240,59 @@
                                        Foreground="#9090A8" VerticalAlignment="Center"
                                        IsVisible="{Binding WebhookTestStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                         </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── EMAIL ALERTS ─────────────────────────────────────── -->\
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="EMAIL ALERTS" Classes="section"/>
+                        <CheckBox IsChecked="{Binding EmailAlertsEnabled}"
+                                  Content="Send email alert when kill switch fires"/>
+
+                        <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto">
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="SMTP host" Classes="label"/>
+                            <TextBox   Grid.Row="0" Grid.Column="2" Text="{Binding SmtpHost}"
+                                       Watermark="smtp.gmail.com"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Port" Classes="label"/>
+                            <NumericUpDown Grid.Row="2" Grid.Column="2" Value="{Binding SmtpPort}"
+                                           Minimum="1" Maximum="65535" Increment="1" FormatString="0"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="From address" Classes="label"/>
+                            <TextBox   Grid.Row="4" Grid.Column="2" Text="{Binding SmtpFrom}"
+                                       Watermark="openclaw@yourdomain.com"/>
+
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Alert recipient" Classes="label"/>
+                            <TextBox   Grid.Row="6" Grid.Column="2" Text="{Binding AlertEmailTo}"
+                                       Watermark="admin@yourdomain.com"/>
+
+                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Username" Classes="label"/>
+                            <TextBox   Grid.Row="8" Grid.Column="2" Text="{Binding SmtpUser}"
+                                       Watermark="(leave blank if no auth)"/>
+
+                            <TextBlock Grid.Row="10" Grid.Column="0" Text="Password" Classes="label"/>
+                            <TextBox   Grid.Row="10" Grid.Column="2" Text="{Binding SmtpPassword}"
+                                       PasswordChar="●"/>
+                        </Grid>
+
+                        <CheckBox IsChecked="{Binding SmtpSsl}" Content="Use SSL/TLS" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── KILL SWITCH RULES ─────────────────────────────────── -->
+                <Border Background="#12122A" CornerRadius="8" BorderBrush="#2A2A40"
+                        BorderThickness="1" Padding="16">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="KILL SWITCH RULES" Classes="section"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#606078"
+                                   Text="Monitors listed here will raise alerts and send notifications but will NOT lock the gateway. Comma-separated. Leave blank to always lock on any alert."/>
+                        <TextBlock Text="Bypass kill switch for monitors:" Classes="label" Margin="0,4,0,0"/>
+                        <TextBox Text="{Binding KillSwitchBypassText}"
+                                 Watermark="e.g. Cron Jobs, System Extensions, Binary Integrity"
+                                 TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 

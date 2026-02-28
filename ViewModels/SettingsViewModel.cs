@@ -22,6 +22,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private int _permissionCheckInterval;
     [ObservableProperty] private int _exposureCheckInterval;
     [ObservableProperty] private int _tokenAgeCheckInterval;
+    [ObservableProperty] private int _systemPostureCheckInterval;
+    [ObservableProperty] private int _cronJobCheckInterval;
+    [ObservableProperty] private int _systemExtensionCheckInterval;
 
     // ── Security thresholds ────────────────────────────────────────────────
     [ObservableProperty] private int _tokenMaxAgeDays;
@@ -42,6 +45,20 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _webhookAlertsEnabled;
     [ObservableProperty] private string _webhookAlertUrl = "";
     [ObservableProperty] private string _webhookTestStatus = "";
+
+    // ── Email alerting ─────────────────────────────────────────────────────
+    [ObservableProperty] private bool _emailAlertsEnabled;
+    [ObservableProperty] private string _smtpHost = "";
+    [ObservableProperty] private int _smtpPort;
+    [ObservableProperty] private bool _smtpSsl;
+    [ObservableProperty] private string _smtpUser = "";
+    [ObservableProperty] private string _smtpPassword = "";
+    [ObservableProperty] private string _smtpFrom = "";
+    [ObservableProperty] private string _alertEmailTo = "";
+
+    // ── Kill switch rules ──────────────────────────────────────────────────
+    // Comma-separated monitor names that bypass gateway lock (alert still fires)
+    [ObservableProperty] private string _killSwitchBypassText = "";
 
     // ── Daily digest ───────────────────────────────────────────────────────
     [ObservableProperty] private bool _dailyDigestEnabled;
@@ -64,15 +81,18 @@ public partial class SettingsViewModel : ObservableObject
         GatewayPort              = _settings.GatewayPort;
         GatewayLabel             = _settings.GatewayLabel;
 
-        StatusPollInterval       = _settings.StatusPollInterval;
-        FileIntegrityInterval    = _settings.FileIntegrityInterval;
-        AlertLogInterval         = _settings.AlertLogInterval;
-        EgressCheckInterval      = _settings.EgressCheckInterval;
-        PatchCheckInterval       = _settings.PatchCheckInterval;
-        NamespaceCheckInterval   = _settings.NamespaceCheckInterval;
-        PermissionCheckInterval  = _settings.PermissionCheckInterval;
-        ExposureCheckInterval    = _settings.ExposureCheckInterval;
-        TokenAgeCheckInterval    = _settings.TokenAgeCheckInterval;
+        StatusPollInterval          = _settings.StatusPollInterval;
+        FileIntegrityInterval       = _settings.FileIntegrityInterval;
+        AlertLogInterval            = _settings.AlertLogInterval;
+        EgressCheckInterval         = _settings.EgressCheckInterval;
+        PatchCheckInterval          = _settings.PatchCheckInterval;
+        NamespaceCheckInterval      = _settings.NamespaceCheckInterval;
+        PermissionCheckInterval     = _settings.PermissionCheckInterval;
+        ExposureCheckInterval       = _settings.ExposureCheckInterval;
+        TokenAgeCheckInterval       = _settings.TokenAgeCheckInterval;
+        SystemPostureCheckInterval  = _settings.SystemPostureCheckInterval;
+        CronJobCheckInterval        = _settings.CronJobCheckInterval;
+        SystemExtensionCheckInterval = _settings.SystemExtensionCheckInterval;
 
         TokenMaxAgeDays          = _settings.TokenMaxAgeDays;
         ExpectedPatchedFileCount = _settings.ExpectedPatchedFileCount;
@@ -88,6 +108,18 @@ public partial class SettingsViewModel : ObservableObject
 
         WebhookAlertsEnabled    = _settings.WebhookAlertsEnabled;
         WebhookAlertUrl         = _settings.WebhookAlertUrl;
+
+        EmailAlertsEnabled   = _settings.EmailAlertsEnabled;
+        SmtpHost             = _settings.SmtpHost;
+        SmtpPort             = _settings.SmtpPort;
+        SmtpSsl              = _settings.SmtpSsl;
+        SmtpUser             = _settings.SmtpUser;
+        SmtpPassword         = _settings.SmtpPassword;
+        SmtpFrom             = _settings.SmtpFrom;
+        AlertEmailTo         = _settings.AlertEmailTo;
+
+        KillSwitchBypassText = string.Join(", ", _settings.KillSwitchDisabledMonitors);
+
         DailyDigestEnabled      = _settings.DailyDigestEnabled;
         DailyDigestHour         = _settings.DailyDigestHour;
     }
@@ -98,15 +130,18 @@ public partial class SettingsViewModel : ObservableObject
         _settings.GatewayPort            = GatewayPort;
         _settings.GatewayLabel           = GatewayLabel;
 
-        _settings.StatusPollInterval      = StatusPollInterval;
-        _settings.FileIntegrityInterval   = FileIntegrityInterval;
-        _settings.AlertLogInterval        = AlertLogInterval;
-        _settings.EgressCheckInterval     = EgressCheckInterval;
-        _settings.PatchCheckInterval      = PatchCheckInterval;
-        _settings.NamespaceCheckInterval  = NamespaceCheckInterval;
-        _settings.PermissionCheckInterval = PermissionCheckInterval;
-        _settings.ExposureCheckInterval   = ExposureCheckInterval;
-        _settings.TokenAgeCheckInterval   = TokenAgeCheckInterval;
+        _settings.StatusPollInterval           = StatusPollInterval;
+        _settings.FileIntegrityInterval        = FileIntegrityInterval;
+        _settings.AlertLogInterval             = AlertLogInterval;
+        _settings.EgressCheckInterval          = EgressCheckInterval;
+        _settings.PatchCheckInterval           = PatchCheckInterval;
+        _settings.NamespaceCheckInterval       = NamespaceCheckInterval;
+        _settings.PermissionCheckInterval      = PermissionCheckInterval;
+        _settings.ExposureCheckInterval        = ExposureCheckInterval;
+        _settings.TokenAgeCheckInterval        = TokenAgeCheckInterval;
+        _settings.SystemPostureCheckInterval   = SystemPostureCheckInterval;
+        _settings.CronJobCheckInterval         = CronJobCheckInterval;
+        _settings.SystemExtensionCheckInterval = SystemExtensionCheckInterval;
 
         _settings.TokenMaxAgeDays          = TokenMaxAgeDays;
         _settings.ExpectedPatchedFileCount = ExpectedPatchedFileCount;
@@ -122,6 +157,20 @@ public partial class SettingsViewModel : ObservableObject
 
         _settings.WebhookAlertsEnabled   = WebhookAlertsEnabled;
         _settings.WebhookAlertUrl        = WebhookAlertUrl;
+
+        _settings.EmailAlertsEnabled   = EmailAlertsEnabled;
+        _settings.SmtpHost             = SmtpHost;
+        _settings.SmtpPort             = SmtpPort;
+        _settings.SmtpSsl              = SmtpSsl;
+        _settings.SmtpUser             = SmtpUser;
+        _settings.SmtpPassword         = SmtpPassword;
+        _settings.SmtpFrom             = SmtpFrom;
+        _settings.AlertEmailTo         = AlertEmailTo;
+
+        _settings.KillSwitchDisabledMonitors = KillSwitchBypassText
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
         _settings.DailyDigestEnabled     = DailyDigestEnabled;
         _settings.DailyDigestHour        = DailyDigestHour;
 
@@ -140,15 +189,18 @@ public partial class SettingsViewModel : ObservableObject
         var d = new TraySettings();
         GatewayPort              = d.GatewayPort;
         GatewayLabel             = d.GatewayLabel;
-        StatusPollInterval       = d.StatusPollInterval;
-        FileIntegrityInterval    = d.FileIntegrityInterval;
-        AlertLogInterval         = d.AlertLogInterval;
-        EgressCheckInterval      = d.EgressCheckInterval;
-        PatchCheckInterval       = d.PatchCheckInterval;
-        NamespaceCheckInterval   = d.NamespaceCheckInterval;
-        PermissionCheckInterval  = d.PermissionCheckInterval;
-        ExposureCheckInterval    = d.ExposureCheckInterval;
-        TokenAgeCheckInterval    = d.TokenAgeCheckInterval;
+        StatusPollInterval           = d.StatusPollInterval;
+        FileIntegrityInterval        = d.FileIntegrityInterval;
+        AlertLogInterval             = d.AlertLogInterval;
+        EgressCheckInterval          = d.EgressCheckInterval;
+        PatchCheckInterval           = d.PatchCheckInterval;
+        NamespaceCheckInterval       = d.NamespaceCheckInterval;
+        PermissionCheckInterval      = d.PermissionCheckInterval;
+        ExposureCheckInterval        = d.ExposureCheckInterval;
+        TokenAgeCheckInterval        = d.TokenAgeCheckInterval;
+        SystemPostureCheckInterval   = d.SystemPostureCheckInterval;
+        CronJobCheckInterval         = d.CronJobCheckInterval;
+        SystemExtensionCheckInterval = d.SystemExtensionCheckInterval;
         TokenMaxAgeDays          = d.TokenMaxAgeDays;
         ExpectedPatchedFileCount = d.ExpectedPatchedFileCount;
         StartMinimized               = d.StartMinimized;
@@ -160,6 +212,15 @@ public partial class SettingsViewModel : ObservableObject
         SecurityAlertsLogPath  = d.SecurityAlertsLogPath;
         WebhookAlertsEnabled   = d.WebhookAlertsEnabled;
         WebhookAlertUrl        = d.WebhookAlertUrl;
+        EmailAlertsEnabled     = d.EmailAlertsEnabled;
+        SmtpHost               = d.SmtpHost;
+        SmtpPort               = d.SmtpPort;
+        SmtpSsl                = d.SmtpSsl;
+        SmtpUser               = d.SmtpUser;
+        SmtpPassword           = d.SmtpPassword;
+        SmtpFrom               = d.SmtpFrom;
+        AlertEmailTo           = d.AlertEmailTo;
+        KillSwitchBypassText   = string.Join(", ", d.KillSwitchDisabledMonitors);
         DailyDigestEnabled     = d.DailyDigestEnabled;
         DailyDigestHour        = d.DailyDigestHour;
         SaveStatus = "Defaults restored — click Save to apply";

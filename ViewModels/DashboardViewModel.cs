@@ -87,7 +87,13 @@ public partial class DashboardViewModel : ObservableObject
     private string _exportStatusText = "";
 
     [ObservableProperty]
+    private string _scoreSparkline = "";
+
+    [ObservableProperty]
     private string _versionText = GetVersionText();
+
+    private readonly List<double> _scoreHistory = new();
+    private const string SparkChars = "▁▂▃▄▅▆▇█";
 
     private static string GetVersionText()
     {
@@ -141,6 +147,9 @@ public partial class DashboardViewModel : ObservableObject
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Binary Integrity",    Status = "Starting..." });
         MonitorStatuses.Add(new MonitorStatusItem { Name = "TCC Permissions",     Status = "Starting..." });
         MonitorStatuses.Add(new MonitorStatusItem { Name = "Sudo Activity",       Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "System Posture",      Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "Cron Jobs",           Status = "Starting..." });
+        MonitorStatuses.Add(new MonitorStatusItem { Name = "System Extensions",   Status = "Starting..." });
     }
 
     public void UpdateStatus(GatewayStatus status)
@@ -205,6 +214,27 @@ public partial class DashboardViewModel : ObservableObject
         }
 
         RefreshEvents();
+
+        if (status.SecurityScore > 0)
+            RecordScore(status.SecurityScore);
+    }
+
+    private void RecordScore(double score)
+    {
+        _scoreHistory.Add(score);
+        if (_scoreHistory.Count > 24) _scoreHistory.RemoveAt(0);
+
+        if (_scoreHistory.Count < 2) { ScoreSparkline = ""; return; }
+        var min   = _scoreHistory.Min();
+        var max   = _scoreHistory.Max();
+        var range = max - min;
+        var sb    = new System.Text.StringBuilder();
+        foreach (var s in _scoreHistory)
+        {
+            int idx = range < 0.01 ? 7 : (int)Math.Round((s - min) / range * 7);
+            sb.Append(SparkChars[Math.Clamp(idx, 0, 7)]);
+        }
+        ScoreSparkline = sb.ToString();
     }
 
     public void RefreshMonitors(MonitorHub hub)

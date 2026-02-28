@@ -124,6 +124,8 @@ public class TraySettings
         new() { Path = "~/.ssh/id_rsa",          Critical = false, CheckPermissions = "600" },
         new() { Path = "~/.ssh/id_ed25519",      Critical = false, CheckPermissions = "600" },
         new() { Path = "~/.ssh/id_ecdsa",        Critical = false, CheckPermissions = "600" },
+        // Hosts file — DNS hijacking target
+        new() { Path = "/etc/hosts",             Critical = false },
     };
 
     // Egress (macOS pf firewall)
@@ -149,12 +151,52 @@ public class TraySettings
     [JsonPropertyName("sudoLogCheckInterval")]
     public int SudoLogCheckInterval { get; set; } = 60;
 
+    [JsonPropertyName("systemPostureCheckInterval")]
+    public int SystemPostureCheckInterval { get; set; } = 300;
+
+    [JsonPropertyName("cronJobCheckInterval")]
+    public int CronJobCheckInterval { get; set; } = 300;
+
+    [JsonPropertyName("systemExtensionCheckInterval")]
+    public int SystemExtensionCheckInterval { get; set; } = 600;
+
     // Webhook alerting
     [JsonPropertyName("webhookAlertsEnabled")]
     public bool WebhookAlertsEnabled { get; set; } = false;
 
     [JsonPropertyName("webhookAlertUrl")]
     public string WebhookAlertUrl { get; set; } = "";
+
+    // Email alerting
+    [JsonPropertyName("emailAlertsEnabled")]
+    public bool EmailAlertsEnabled { get; set; } = false;
+
+    [JsonPropertyName("smtpHost")]
+    public string SmtpHost { get; set; } = "";
+
+    [JsonPropertyName("smtpPort")]
+    public int SmtpPort { get; set; } = 587;
+
+    [JsonPropertyName("smtpSsl")]
+    public bool SmtpSsl { get; set; } = true;
+
+    [JsonPropertyName("smtpUser")]
+    public string SmtpUser { get; set; } = "";
+
+    // Stored with chmod 600 — protected to current user only
+    [JsonPropertyName("smtpPassword")]
+    public string SmtpPassword { get; set; } = "";
+
+    [JsonPropertyName("smtpFrom")]
+    public string SmtpFrom { get; set; } = "";
+
+    [JsonPropertyName("alertEmailTo")]
+    public string AlertEmailTo { get; set; } = "";
+
+    // Kill switch — monitors that raise alerts but do NOT lock the gateway
+    // Comma-separated monitor names (e.g. "Cron Jobs,System Extensions")
+    [JsonPropertyName("killSwitchDisabledMonitors")]
+    public List<string> KillSwitchDisabledMonitors { get; set; } = new();
 
     // Daily digest notification
     [JsonPropertyName("dailyDigestEnabled")]
@@ -226,6 +268,10 @@ public class TraySettings
         LaunchAgentCheckInterval      = Clamp(LaunchAgentCheckInterval,      30,  3600);
         BinaryIntegrityCheckInterval  = Clamp(BinaryIntegrityCheckInterval,  30,  3600);
         SudoLogCheckInterval          = Clamp(SudoLogCheckInterval,          30,  600);
+        SystemPostureCheckInterval    = Clamp(SystemPostureCheckInterval,    30,  3600);
+        CronJobCheckInterval          = Clamp(CronJobCheckInterval,          30,  3600);
+        SystemExtensionCheckInterval  = Clamp(SystemExtensionCheckInterval,  60,  3600);
+        SmtpPort                      = Clamp(SmtpPort,                      1,   65535);
         DailyDigestHour               = Clamp(DailyDigestHour,               0,   23);
     }
 

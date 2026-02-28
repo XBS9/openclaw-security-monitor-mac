@@ -53,6 +53,10 @@
                             <SolidColorBrush Color="{Binding StatusColor}"/>
                         </TextBlock.Foreground>
                     </TextBlock>
+                    <TextBlock Text="{Binding ScoreSparkline}" FontSize="9"
+                               Foreground="#404058" HorizontalAlignment="Center"
+                               FontFamily="SF Mono, Menlo, monospace" LetterSpacing="1"
+                               IsVisible="{Binding ScoreSparkline, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                 </StackPanel>
             </Grid>
         </Border>

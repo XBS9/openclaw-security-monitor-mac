@@ -32,21 +32,29 @@ public class KillSwitch
 
     public async Task FireAsync(string monitor, string trigger, string details)
     {
+        // If this monitor is in the disabled list, record the alert and notify
+        // but do NOT lock the gateway — it stays up.
+        bool bypass = _settings.KillSwitchDisabledMonitors
+            .Contains(monitor, StringComparer.OrdinalIgnoreCase);
+
         var evt = new SecurityEvent
         {
             Timestamp = DateTime.Now,
             Monitor   = monitor,
             Trigger   = trigger,
             Details   = details,
-            Action    = "KILL_SWITCH: Gateway locked"
+            Action    = bypass ? "ALERT: Kill switch bypassed for monitor" : "KILL_SWITCH: Gateway locked"
         };
 
         Action<SecurityEvent>? handler;
         lock (_lock)
         {
             _events.Add(evt);
-            _engaged = true;
-            UnreviewedCount++;
+            if (!bypass)
+            {
+                _engaged = true;
+                UnreviewedCount++;
+            }
             handler = Triggered;
         }
 
@@ -54,6 +62,8 @@ public class KillSwitch
         PersistState();
 
         handler?.Invoke(evt);
+
+        if (bypass) return;
 
         var locked = await _gateway.LockAsync();
         if (!locked)
