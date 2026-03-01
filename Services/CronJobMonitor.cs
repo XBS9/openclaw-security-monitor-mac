@@ -89,7 +89,38 @@ public class CronJobMonitor : IDisposable
 
             if (_baseline == null)
             {
+                var loadResult = BaselinePersistence.TryLoad("cron-jobs", out var saved);
+
+                if (loadResult == BaselinePersistence.LoadResult.Tampered)
+                {
+                    _hub.Report(MonitorHub.CronJobs, MonitorState.Alert,
+                        "Baseline tampered — re-establishing");
+                    _baseline = entries;
+                    BaselinePersistence.Save("cron-jobs", _baseline);
+                    return;
+                }
+
+                if (loadResult == BaselinePersistence.LoadResult.Ok && saved != null)
+                {
+                    _baseline = saved;
+                    var newSinceRestart = entries.Except(_baseline).ToList();
+                    if (newSinceRestart.Count > 0)
+                    {
+                        var summary = string.Join(", ", newSinceRestart.Take(2));
+                        if (newSinceRestart.Count > 2) summary += $" +{newSinceRestart.Count - 2} more";
+                        _hub.Report(MonitorHub.CronJobs, MonitorState.Warning,
+                            $"New since restart: {summary}");
+                        _baseline.UnionWith(newSinceRestart);
+                        BaselinePersistence.Save("cron-jobs", _baseline);
+                        return;
+                    }
+                    _hub.Report(MonitorHub.CronJobs, MonitorState.Ok,
+                        entries.Count == 0 ? "No cron jobs" : $"Baseline loaded ({_baseline.Count} entries)");
+                    return;
+                }
+
                 _baseline = entries;
+                BaselinePersistence.Save("cron-jobs", _baseline);
                 _hub.Report(MonitorHub.CronJobs, MonitorState.Ok,
                     entries.Count == 0 ? "No cron jobs" : $"Baseline set ({entries.Count} entries)");
                 return;
@@ -103,6 +134,7 @@ public class CronJobMonitor : IDisposable
                 _hub.Report(MonitorHub.CronJobs, MonitorState.Warning,
                     $"New: {summary}");
                 _baseline.UnionWith(newEntries);
+                BaselinePersistence.Save("cron-jobs", _baseline);
                 return;
             }
 

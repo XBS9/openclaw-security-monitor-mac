@@ -240,6 +240,21 @@
                                        Foreground="#9090A8" VerticalAlignment="Center"
                                        IsVisible="{Binding WebhookTestStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                         </StackPanel>
+
+                        <!-- Alert escalation (v1.6.0) -->
+                        <Rectangle Height="1" Fill="#2A2A40" Margin="0,6,0,2"/>
+                        <TextBlock Text="ALERT ESCALATION" Classes="section"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#606078"
+                                   Text="Send email/webhook when any monitor changes state — without needing the kill switch to fire."/>
+                        <CheckBox IsChecked="{Binding AlertOnAlerts}"
+                                  Content="Notify when monitor reaches Alert state"/>
+                        <CheckBox IsChecked="{Binding AlertOnWarnings}"
+                                  Content="Also notify on Warning state"/>
+                        <Grid ColumnDefinitions="*,12,Auto" RowDefinitions="Auto" Margin="0,4,0,0">
+                            <TextBlock Grid.Column="0" Text="Cooldown between alerts (minutes)" Classes="label"/>
+                            <NumericUpDown Grid.Column="2" Value="{Binding AlertCooldownMinutes}"
+                                          Minimum="1" Maximum="60" Increment="1" FormatString="0"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
 
@@ -319,12 +334,14 @@
                 BorderThickness="0,1,0,0" Padding="18,12">
             <Grid ColumnDefinitions="*,Auto">
 
-                <!-- Left: status text + reset -->
+                <!-- Left: status text + reset buttons -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
                     <TextBlock Text="{Binding SaveStatus}" FontSize="12"
                                Foreground="#4ADE80" VerticalAlignment="Center"/>
                     <Button Content="Reset Defaults" Command="{Binding ResetDefaultsCommand}"
                             Foreground="#8888A8"/>
+                    <Button Content="Reset Baselines" Command="{Binding ResetBaselinesCommand}"
+                            Foreground="#F87171" ToolTip.Tip="Clear persisted baselines — monitors re-establish on next check"/>
                 </StackPanel>
 
                 <!-- Right: Cancel / Save -->

@@ -19,9 +19,18 @@ public class MonitorStatus
 public class MonitorHub
 {
     private readonly Dictionary<string, MonitorStatus> _statuses = new();
+    private readonly Dictionary<string, MonitorState> _prevStates = new();
     private readonly object _lock = new();
 
+    /// <summary>Fires on every status change (existing behaviour).</summary>
     public event Action? Updated;
+
+    /// <summary>
+    /// Fires when a monitor transitions TO Warning or Alert from Ok or Starting.
+    /// Used by TrayApplication to send email/webhook alerts without needing a kill switch.
+    /// Does NOT fire on repeated alerts from the same monitor (only on state escalation).
+    /// </summary>
+    public event Action<MonitorStatus>? StateEscalated;
 
     public static readonly string Gateway         = "Gateway Health";
     public static readonly string FileIntegrity   = "File Integrity";
@@ -68,17 +77,40 @@ public class MonitorHub
     public void Report(string name, MonitorState state, string detail)
     {
         Action? handler;
+        Action<MonitorStatus>? escalatedHandler = null;
+        MonitorStatus? escalatedStatus = null;
+
         lock (_lock)
         {
             if (_statuses.TryGetValue(name, out var status))
             {
-                status.State = state;
-                status.Detail = detail;
+                var prevState = _prevStates.TryGetValue(name, out var p) ? p : MonitorState.Starting;
+
+                // Escalation: transitioning TO Warning/Alert FROM Ok/Starting only
+                if ((state == MonitorState.Warning || state == MonitorState.Alert) &&
+                    (prevState == MonitorState.Ok   || prevState == MonitorState.Starting))
+                {
+                    escalatedStatus = new MonitorStatus
+                    {
+                        Name        = name,
+                        State       = state,
+                        Detail      = detail,
+                        LastChecked = DateTime.Now
+                    };
+                    escalatedHandler = StateEscalated;
+                }
+
+                _prevStates[name]  = state;
+                status.State       = state;
+                status.Detail      = detail;
                 status.LastChecked = DateTime.Now;
             }
             handler = Updated;
         }
+
         handler?.Invoke();
+        if (escalatedStatus != null)
+            escalatedHandler?.Invoke(escalatedStatus);
     }
 
     public List<MonitorStatus> GetAll()

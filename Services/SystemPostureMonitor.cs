@@ -104,7 +104,33 @@ public class SystemPostureMonitor : IDisposable
 
             if (_adminBaseline == null)
             {
-                _adminBaseline = admins;
+                var loadResult = BaselinePersistence.TryLoad("admin-accounts", out var saved);
+
+                if (loadResult == BaselinePersistence.LoadResult.Tampered)
+                {
+                    alerts.Add("Admin baseline tampered — re-establishing");
+                    _adminBaseline = admins;
+                    BaselinePersistence.Save("admin-accounts", _adminBaseline);
+                }
+                else if (loadResult == BaselinePersistence.LoadResult.Ok && saved != null)
+                {
+                    _adminBaseline = saved;
+                    var newSinceRestart = admins.Except(_adminBaseline).ToList();
+                    if (newSinceRestart.Count > 0)
+                    {
+                        var names = string.Join(", ", newSinceRestart);
+                        await _killSwitch.FireAsync("SystemPostureMonitor",
+                            $"New admin account since last run: {newSinceRestart[0]}",
+                            $"New account(s) added to admin group while monitor was offline: {names}");
+                        _adminBaseline.UnionWith(newSinceRestart);
+                        BaselinePersistence.Save("admin-accounts", _adminBaseline);
+                    }
+                }
+                else
+                {
+                    _adminBaseline = admins;
+                    BaselinePersistence.Save("admin-accounts", _adminBaseline);
+                }
             }
             else
             {
@@ -116,7 +142,21 @@ public class SystemPostureMonitor : IDisposable
                         $"New admin account: {newAdmins[0]}",
                         $"New account(s) added to admin group: {names}");
                     _adminBaseline.UnionWith(newAdmins);
+                    BaselinePersistence.Save("admin-accounts", _adminBaseline);
                 }
+            }
+
+            // ── Self-protection plist ────────────────────────────────────────
+            // LaunchAgent with KeepAlive=true makes launchd restart the monitor after kill.
+            // If the plist is missing, any local user process can silence monitoring forever.
+            var selfPlistPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Library", "LaunchAgents", "com.openclaw.security-monitor.plist");
+            if (!File.Exists(selfPlistPath) ||
+                !File.ReadAllText(selfPlistPath).Contains("KeepAlive",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                warnings.Add("Self-protection plist missing — monitor can be silenced");
             }
 
             // ── Remote access ────────────────────────────────────────────────

@@ -77,7 +77,45 @@ public class LaunchAgentScanMonitor : IDisposable
 
             if (_baseline == null)
             {
+                // Try to load persisted baseline from disk (survives app restarts)
+                var loadResult = BaselinePersistence.TryLoad("launch-agents", out var saved);
+
+                if (loadResult == BaselinePersistence.LoadResult.Tampered)
+                {
+                    // Baseline file was modified without updating integrity sidecar
+                    _hub.Report(MonitorHub.LaunchAgents, MonitorState.Alert,
+                        "Baseline tampered — re-establishing");
+                    _baseline = current;
+                    BaselinePersistence.Save("launch-agents", _baseline);
+                    return;
+                }
+
+                if (loadResult == BaselinePersistence.LoadResult.Ok && saved != null)
+                {
+                    _baseline = saved;
+                    // Compare current state to persisted baseline — catch plists added during downtime
+                    var newSinceRestart = current.Except(_baseline).ToList();
+                    if (newSinceRestart.Count > 0)
+                    {
+                        var names = string.Join(", ", newSinceRestart.Take(3));
+                        if (newSinceRestart.Count > 3) names += $" +{newSinceRestart.Count - 3} more";
+                        await _killSwitch.FireAsync("LaunchAgentScanMonitor",
+                            $"New LaunchAgent since last run: {newSinceRestart[0]}",
+                            $"Unknown plist(s) added while monitor was offline: {string.Join(", ", newSinceRestart)}");
+                        _hub.Report(MonitorHub.LaunchAgents, MonitorState.Alert,
+                            $"New agent since restart: {names}");
+                        _baseline.UnionWith(newSinceRestart);
+                        BaselinePersistence.Save("launch-agents", _baseline);
+                        return;
+                    }
+                    _hub.Report(MonitorHub.LaunchAgents, MonitorState.Ok,
+                        $"Baseline loaded ({_baseline.Count} agents)");
+                    return;
+                }
+
+                // First run — establish and persist baseline
                 _baseline = current;
+                BaselinePersistence.Save("launch-agents", _baseline);
                 _hub.Report(MonitorHub.LaunchAgents, MonitorState.Ok,
                     $"Baseline set ({current.Count} agents)");
                 return;
@@ -100,8 +138,9 @@ public class LaunchAgentScanMonitor : IDisposable
                 _hub.Report(MonitorHub.LaunchAgents, MonitorState.Alert,
                     $"New agent: {names}");
 
-                // Absorb so we don't re-fire for the same plist on every cycle
+                // Absorb so we don't re-fire for the same plist on every cycle; persist update
                 _baseline.UnionWith(newAgents);
+                BaselinePersistence.Save("launch-agents", _baseline);
                 return;
             }
 
@@ -111,6 +150,7 @@ public class LaunchAgentScanMonitor : IDisposable
                 _hub.Report(MonitorHub.LaunchAgents, MonitorState.Warning,
                     $"Removed: {names}");
                 _baseline.ExceptWith(removedAgents);
+                BaselinePersistence.Save("launch-agents", _baseline);
                 return;
             }
 

@@ -50,6 +50,10 @@ public class TrayApplication : IDisposable
     private WebhookAlertService? _webhookAlertService;
     private EmailAlertService? _emailAlertService;
     private DateTime _lastDigestDate = DateTime.MinValue;
+
+    // Rate-limiting for StateEscalated notifications (per monitor name)
+    private readonly Dictionary<string, DateTime> _lastAlertSentPerMonitor = new();
+    private readonly object _alertRateLock = new();
     private Timer? _connectionsTimer;
 
     private GatewayStatus _currentStatus = new();
@@ -94,10 +98,12 @@ public class TrayApplication : IDisposable
 
         _webhookAlertService = new WebhookAlertService(_settings);
         _emailAlertService   = new EmailAlertService(_settings);
-        _killSwitch.Triggered += OnKillSwitchTriggered;
-        _monitorHub.Updated   += OnMonitorUpdated;
+        _killSwitch.Triggered       += OnKillSwitchTriggered;
+        _monitorHub.Updated         += OnMonitorUpdated;
+        _monitorHub.StateEscalated  += OnMonitorStateEscalated;
 
         StartMonitors();
+        EnsureSelfProtectionPlist();
 
         if (!_settings.HasShownFirstRun)
             Dispatcher.UIThread.InvokeAsync(ShowFirstRun);
@@ -248,6 +254,23 @@ public class TrayApplication : IDisposable
         aboutItem.Click += (_, _) => Dispatcher.UIThread.InvokeAsync(ShowAbout);
         menu.Add(aboutItem);
 
+        var donateItem = new NativeMenuItem("Donate ♥");
+        donateItem.Click += (_, _) =>
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName        = "open",
+                    ArgumentList    = { "https://www.paypal.com/donate?business=6xxwhp%40gmail.com" },
+                    UseShellExecute = false,
+                    CreateNoWindow  = true
+                });
+            }
+            catch { }
+        };
+        menu.Add(donateItem);
+
         _updateItem = new NativeMenuItem("") { IsVisible = false };
         _updateItem.Click += (_, _) =>
         {
@@ -397,6 +420,77 @@ public class TrayApplication : IDisposable
     {
         _patchWarning = true;
         Dispatcher.UIThread.InvokeAsync(UpdateTrayState);
+    }
+
+    /// <summary>
+    /// Fires when any monitor transitions to Warning or Alert for the first time.
+    /// Sends email/webhook alerts with per-monitor rate limiting to prevent flooding.
+    /// </summary>
+    private void OnMonitorStateEscalated(MonitorStatus status)
+    {
+        var cooldown = TimeSpan.FromMinutes(_settings.AlertCooldownMinutes);
+        var now = DateTime.Now;
+
+        lock (_alertRateLock)
+        {
+            if (_lastAlertSentPerMonitor.TryGetValue(status.Name, out var lastSent) &&
+                (now - lastSent) < cooldown)
+                return;
+
+            _lastAlertSentPerMonitor[status.Name] = now;
+        }
+
+        _webhookAlertService?.SendMonitorAlert(status);
+        _emailAlertService?.SendMonitorAlert(status);
+    }
+
+    /// <summary>
+    /// Writes a KeepAlive LaunchAgent plist for this app if it does not already exist,
+    /// then loads it via launchctl. macOS launchd will restart the monitor automatically
+    /// within ThrottleInterval seconds if the process is killed.
+    /// Called at startup; fires-and-forgets so it never blocks Initialize().
+    /// </summary>
+    private void EnsureSelfProtectionPlist()
+    {
+        _ = EnsureSelfProtectionPlistAsync();
+    }
+
+    private async Task EnsureSelfProtectionPlistAsync()
+    {
+        try
+        {
+            var home      = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var plistPath = Path.Combine(home, "Library", "LaunchAgents",
+                                         "com.openclaw.security-monitor.plist");
+
+            if (File.Exists(plistPath)) return; // already installed
+
+            const string appPath =
+                "/Applications/OpenClawMonitor.app/Contents/MacOS/OpenClawSecurityMonitorMac";
+
+            var plistXml =
+                $"""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                <plist version="1.0">
+                <dict>
+                    <key>Label</key><string>com.openclaw.security-monitor</string>
+                    <key>Program</key><string>{appPath}</string>
+                    <key>KeepAlive</key><true/>
+                    <key>RunAtLoad</key><true/>
+                    <key>ThrottleInterval</key><integer>10</integer>
+                </dict>
+                </plist>
+                """;
+
+            File.WriteAllText(plistPath, plistXml);
+            await _bash.RunAsync($"launchctl load \"{plistPath}\" 2>/dev/null || true");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[TrayApp] EnsureSelfProtectionPlist failed: {ex.Message}");
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -809,6 +903,17 @@ public class TrayApplication : IDisposable
                 "Administrator authentication required to stop the security monitor.");
             return;
         }
+
+        // Unload self-protection plist so launchd doesn't restart us after quit
+        try
+        {
+            var home      = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var plistPath = Path.Combine(home, "Library", "LaunchAgents",
+                                         "com.openclaw.security-monitor.plist");
+            if (File.Exists(plistPath))
+                await _bash.RunAsync($"launchctl unload \"{plistPath}\" 2>/dev/null || true");
+        }
+        catch { }
 
         Dispose();
         _ = Dispatcher.UIThread.InvokeAsync(() =>

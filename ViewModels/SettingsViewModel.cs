@@ -56,6 +56,11 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _smtpFrom = "";
     [ObservableProperty] private string _alertEmailTo = "";
 
+    // ── Alert escalation ───────────────────────────────────────────────────
+    [ObservableProperty] private bool _alertOnAlerts;
+    [ObservableProperty] private bool _alertOnWarnings;
+    [ObservableProperty] private int  _alertCooldownMinutes;
+
     // ── Kill switch rules ──────────────────────────────────────────────────
     // Comma-separated monitor names that bypass gateway lock (alert still fires)
     [ObservableProperty] private string _killSwitchBypassText = "";
@@ -109,6 +114,10 @@ public partial class SettingsViewModel : ObservableObject
         WebhookAlertsEnabled    = _settings.WebhookAlertsEnabled;
         WebhookAlertUrl         = _settings.WebhookAlertUrl;
 
+        AlertOnAlerts           = _settings.AlertOnAlerts;
+        AlertOnWarnings         = _settings.AlertOnWarnings;
+        AlertCooldownMinutes    = _settings.AlertCooldownMinutes;
+
         EmailAlertsEnabled   = _settings.EmailAlertsEnabled;
         SmtpHost             = _settings.SmtpHost;
         SmtpPort             = _settings.SmtpPort;
@@ -157,6 +166,10 @@ public partial class SettingsViewModel : ObservableObject
 
         _settings.WebhookAlertsEnabled   = WebhookAlertsEnabled;
         _settings.WebhookAlertUrl        = WebhookAlertUrl;
+
+        _settings.AlertOnAlerts          = AlertOnAlerts;
+        _settings.AlertOnWarnings        = AlertOnWarnings;
+        _settings.AlertCooldownMinutes   = AlertCooldownMinutes;
 
         _settings.EmailAlertsEnabled   = EmailAlertsEnabled;
         _settings.SmtpHost             = SmtpHost;
@@ -212,6 +225,9 @@ public partial class SettingsViewModel : ObservableObject
         SecurityAlertsLogPath  = d.SecurityAlertsLogPath;
         WebhookAlertsEnabled   = d.WebhookAlertsEnabled;
         WebhookAlertUrl        = d.WebhookAlertUrl;
+        AlertOnAlerts          = d.AlertOnAlerts;
+        AlertOnWarnings        = d.AlertOnWarnings;
+        AlertCooldownMinutes   = d.AlertCooldownMinutes;
         EmailAlertsEnabled     = d.EmailAlertsEnabled;
         SmtpHost               = d.SmtpHost;
         SmtpPort               = d.SmtpPort;
@@ -268,6 +284,33 @@ public partial class SettingsViewModel : ObservableObject
 
         await Task.Delay(4000);
         WebhookTestStatus = "";
+    }
+
+    /// <summary>
+    /// Deletes all persisted baseline files from ~/.openclaw/baselines/.
+    /// Monitors will re-establish baselines on the next check cycle.
+    /// Use this after acknowledging a legitimate system change that produced false alerts.
+    /// </summary>
+    [RelayCommand]
+    private void ResetBaselines()
+    {
+        try
+        {
+            var baselineDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".openclaw", "baselines");
+            if (Directory.Exists(baselineDir))
+            {
+                foreach (var f in Directory.GetFiles(baselineDir))
+                    File.Delete(f);
+            }
+            SaveStatus = "Baselines cleared — will re-establish on next check";
+        }
+        catch (Exception ex)
+        {
+            SaveStatus = $"Reset failed: {ex.Message}";
+        }
+        _ = ClearSaveStatusAsync();
     }
 
     [RelayCommand]

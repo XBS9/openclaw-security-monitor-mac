@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using OpenClawSecurityMonitorMac.Core;
 using OpenClawSecurityMonitorMac.Models;
 
 namespace OpenClawSecurityMonitorMac.Services;
@@ -26,6 +27,63 @@ public class EmailAlertService
         if (string.IsNullOrWhiteSpace(_settings.SmtpHost)) return;
         if (string.IsNullOrWhiteSpace(_settings.AlertEmailTo)) return;
         _ = SendAsync(evt);
+    }
+
+    /// <summary>
+    /// Sends an email when a monitor escalates to Warning or Alert (non-kill-switch path).
+    /// Gated by AlertOnAlerts / AlertOnWarnings settings.
+    /// </summary>
+    public void SendMonitorAlert(MonitorStatus status)
+    {
+        if (!_settings.EmailAlertsEnabled) return;
+        if (status.State == MonitorState.Alert   && !_settings.AlertOnAlerts)   return;
+        if (status.State == MonitorState.Warning && !_settings.AlertOnWarnings) return;
+        if (string.IsNullOrWhiteSpace(_settings.SmtpHost)) return;
+        if (string.IsNullOrWhiteSpace(_settings.AlertEmailTo)) return;
+        _ = SendMonitorAlertAsync(status);
+    }
+
+    private async Task SendMonitorAlertAsync(MonitorStatus status)
+    {
+        try
+        {
+            var severity = status.State == MonitorState.Alert ? "ALERT" : "WARNING";
+            var body =
+                $"OpenClaw Security Monitor — {severity}\n" +
+                $"================================\n" +
+                $"Host:      {Environment.MachineName}\n" +
+                $"User:      {Environment.UserName}\n" +
+                $"Monitor:   {status.Name}\n" +
+                $"State:     {status.State}\n" +
+                $"Detail:    {status.Detail}\n" +
+                $"Timestamp: {status.LastChecked:yyyy-MM-dd HH:mm:ss zzz}";
+
+            using var client = new SmtpClient(_settings.SmtpHost, _settings.SmtpPort)
+            {
+                EnableSsl      = _settings.SmtpSsl,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Timeout        = 15_000,
+                Credentials    = string.IsNullOrEmpty(_settings.SmtpUser)
+                    ? null
+                    : new NetworkCredential(_settings.SmtpUser, _settings.SmtpPassword)
+            };
+
+            var from = string.IsNullOrWhiteSpace(_settings.SmtpFrom)
+                ? $"openclaw@{Environment.MachineName}"
+                : _settings.SmtpFrom;
+
+            using var msg = new MailMessage(from, _settings.AlertEmailTo)
+            {
+                Subject = $"[OpenClaw {severity}] {status.Name}: {status.Detail}",
+                Body    = body
+            };
+
+            await client.SendMailAsync(msg);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[EmailAlert] SendMonitorAlertAsync failed: {ex.Message}");
+        }
     }
 
     private async Task SendAsync(SecurityEvent evt)

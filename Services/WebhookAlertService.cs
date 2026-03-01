@@ -35,6 +35,45 @@ public class WebhookAlertService
         _ = SendAsync(evt);
     }
 
+    /// <summary>
+    /// Sends a webhook when a monitor escalates to Warning or Alert (non-kill-switch path).
+    /// Gated by AlertOnAlerts / AlertOnWarnings settings.
+    /// </summary>
+    public void SendMonitorAlert(MonitorStatus status)
+    {
+        if (!_settings.WebhookAlertsEnabled || string.IsNullOrWhiteSpace(_settings.WebhookAlertUrl))
+            return;
+        if (status.State == MonitorState.Alert   && !_settings.AlertOnAlerts)   return;
+        if (status.State == MonitorState.Warning && !_settings.AlertOnWarnings) return;
+
+        _ = SendMonitorAlertAsync(status);
+    }
+
+    private async Task SendMonitorAlertAsync(MonitorStatus status)
+    {
+        try
+        {
+            var payload = new
+            {
+                source    = "OpenClawSecurityMonitor",
+                host      = Environment.MachineName,
+                username  = Environment.UserName,
+                monitor   = status.Name,
+                state     = status.State.ToString(),
+                detail    = status.Detail,
+                timestamp = status.LastChecked?.ToString("o") ?? DateTime.Now.ToString("o")
+            };
+
+            var json    = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            await Http.PostAsync(_settings.WebhookAlertUrl, content);
+        }
+        catch
+        {
+            // Best-effort — webhook failures must never disrupt monitor operation
+        }
+    }
+
     private async Task SendAsync(SecurityEvent evt)
     {
         try

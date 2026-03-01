@@ -14,9 +14,55 @@ namespace OpenClawSecurityMonitorMac.Tests.Unit;
 /// Strategy: Start() → immediate first check fires → cancel → inspect hub state.
 /// We use a short initial delay override by providing an interval of 1ms via
 /// a subclassed settings object so the check fires before the test times out.
+///
+/// Isolation: each test instance redirects BaselinePersistence to a temp directory
+/// so persistent baselines from real ~/.openclaw/baselines don't pollute tests.
+/// A minimal self-protection plist is created if absent so SystemPosture tests
+/// don't add a spurious "plist missing" warning to otherwise-clean posture checks.
 /// </summary>
-public class MonitorBehaviorTests
+[Collection("NoParallel")]
+public class MonitorBehaviorTests : IDisposable
 {
+    private readonly string _tmpDir;
+    private readonly string? _createdPlist;
+
+    public MonitorBehaviorTests()
+    {
+        // Redirect all BaselinePersistence I/O to an isolated temp dir
+        _tmpDir = Path.Combine(Path.GetTempPath(),
+            "openclaw-mbtest-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(_tmpDir);
+        BaselinePersistence.TestBaselineDir = _tmpDir;
+
+        // Ensure self-protection plist exists so SystemPosture "Ok" tests aren't
+        // downgraded to Warning by the plist-missing check
+        var plistPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Library", "LaunchAgents", "com.openclaw.security-monitor.plist");
+        if (!File.Exists(plistPath))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(plistPath)!);
+            File.WriteAllText(plistPath,
+                """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                <plist version="1.0"><dict>
+                  <key>Label</key><string>com.openclaw.security-monitor</string>
+                  <key>KeepAlive</key><true/>
+                </dict></plist>
+                """);
+            _createdPlist = plistPath;
+        }
+    }
+
+    public void Dispose()
+    {
+        BaselinePersistence.TestBaselineDir = null;
+        try { Directory.Delete(_tmpDir, recursive: true); } catch { }
+        if (_createdPlist != null)
+            try { File.Delete(_createdPlist); } catch { }
+    }
+
     private static (MockCommandService cmd, MonitorHub hub, MockGatewayService gw, TraySettings settings)
         BuildEnv(Action<TraySettings>? configure = null)
     {

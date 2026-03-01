@@ -198,6 +198,17 @@ public class TraySettings
     [JsonPropertyName("killSwitchDisabledMonitors")]
     public List<string> KillSwitchDisabledMonitors { get; set; } = new();
 
+    // Alert escalation notifications (non-kill-switch monitor state changes)
+    [JsonPropertyName("alertOnAlerts")]
+    public bool AlertOnAlerts { get; set; } = true;
+
+    [JsonPropertyName("alertOnWarnings")]
+    public bool AlertOnWarnings { get; set; } = false;
+
+    // Minimum minutes between repeated alerts for the same monitor (prevents flooding)
+    [JsonPropertyName("alertCooldownMinutes")]
+    public int AlertCooldownMinutes { get; set; } = 5;
+
     // Daily digest notification
     [JsonPropertyName("dailyDigestEnabled")]
     public bool DailyDigestEnabled { get; set; } = true;
@@ -273,6 +284,7 @@ public class TraySettings
         SystemExtensionCheckInterval  = Clamp(SystemExtensionCheckInterval,  60,  3600);
         SmtpPort                      = Clamp(SmtpPort,                      1,   65535);
         DailyDigestHour               = Clamp(DailyDigestHour,               0,   23);
+        AlertCooldownMinutes          = Clamp(AlertCooldownMinutes,           1,   60);
     }
 
     private void MigrateMonitoredFiles()

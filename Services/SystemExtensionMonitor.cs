@@ -72,7 +72,38 @@ public class SystemExtensionMonitor : IDisposable
 
             if (_baseline == null)
             {
+                var loadResult = BaselinePersistence.TryLoad("system-extensions", out var saved);
+
+                if (loadResult == BaselinePersistence.LoadResult.Tampered)
+                {
+                    _hub.Report(MonitorHub.SystemExtensions, MonitorState.Alert,
+                        "Baseline tampered — re-establishing");
+                    _baseline = extensions;
+                    BaselinePersistence.Save("system-extensions", _baseline);
+                    return;
+                }
+
+                if (loadResult == BaselinePersistence.LoadResult.Ok && saved != null)
+                {
+                    _baseline = saved;
+                    var newSinceRestart = extensions.Except(_baseline).ToList();
+                    if (newSinceRestart.Count > 0)
+                    {
+                        var names = string.Join(", ", newSinceRestart.Take(2));
+                        if (newSinceRestart.Count > 2) names += $" +{newSinceRestart.Count - 2} more";
+                        _hub.Report(MonitorHub.SystemExtensions, MonitorState.Alert,
+                            $"New extension since restart: {names}");
+                        _baseline.UnionWith(newSinceRestart);
+                        BaselinePersistence.Save("system-extensions", _baseline);
+                        return;
+                    }
+                    _hub.Report(MonitorHub.SystemExtensions, MonitorState.Ok,
+                        $"Baseline loaded ({_baseline.Count} extensions)");
+                    return;
+                }
+
                 _baseline = extensions;
+                BaselinePersistence.Save("system-extensions", _baseline);
                 _hub.Report(MonitorHub.SystemExtensions, MonitorState.Ok,
                     $"Baseline set ({extensions.Count} extensions)");
                 return;
@@ -88,6 +119,7 @@ public class SystemExtensionMonitor : IDisposable
                 _hub.Report(MonitorHub.SystemExtensions, MonitorState.Alert,
                     $"New extension: {names}");
                 _baseline.UnionWith(newExts);
+                BaselinePersistence.Save("system-extensions", _baseline);
                 return;
             }
 
@@ -96,6 +128,7 @@ public class SystemExtensionMonitor : IDisposable
                 _hub.Report(MonitorHub.SystemExtensions, MonitorState.Warning,
                     $"Removed: {string.Join(", ", removedExts.Take(2))}");
                 _baseline.ExceptWith(removedExts);
+                BaselinePersistence.Save("system-extensions", _baseline);
                 return;
             }
 
