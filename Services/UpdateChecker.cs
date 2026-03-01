@@ -14,7 +14,7 @@ public static class UpdateChecker
 
     static UpdateChecker()
     {
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawMonitor/1.5.3");
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawMonitor/1.5.4");
         _http.Timeout = TimeSpan.FromSeconds(15);
     }
 
@@ -76,7 +76,7 @@ public static class UpdateChecker
 
             using var client = new HttpClient();
             client.Timeout = TimeSpan.FromMinutes(5);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawMonitor/1.5.3");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawMonitor/1.5.4");
 
             var bytes = await client.GetByteArrayAsync(info.DownloadUrl, ct);
             await File.WriteAllBytesAsync(localPath, bytes, ct);
