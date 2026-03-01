@@ -164,6 +164,7 @@
                     <Button Content="Export Alerts" Command="{Binding ExportAlertsCommand}" MinWidth="96"/>
                     <Button Content="Settings"      Command="{Binding OpenSettingsCommand}" MinWidth="68"/>
                     <Button Content="About"         Command="{Binding OpenAboutCommand}"    MinWidth="56"/>
+                    <Button Content="Donate ♥"     Command="{Binding DonateCommand}"       MinWidth="72" Foreground="#FF8FAF"/>
                     <Button Content="Quit"          Command="{Binding ExitCommand}"
                             MinWidth="48" Foreground="#FF6B6B"/>
                 </StackPanel>

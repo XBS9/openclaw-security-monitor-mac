@@ -334,6 +334,22 @@ public partial class DashboardViewModel : ObservableObject
     private void OpenAbout() => _openAboutAction();
 
     [RelayCommand]
+    private void Donate()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName        = "open",
+                ArgumentList    = { "https://www.paypal.com/donate?business=6xxwhp%40gmail.com" },
+                UseShellExecute = false,
+                CreateNoWindow  = true
+            });
+        }
+        catch { }
+    }
+
+    [RelayCommand]
     private void Exit() => _exitAction();
 
     [RelayCommand]
