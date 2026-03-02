@@ -1115,7 +1115,7 @@ public class TrayApplication : IDisposable
         {
             var script =
                 $"display dialog \"OpenClaw Monitor v{version} has been downloaded and is ready to install.\\n\\n" +
-                $"Click \\\"Install Now\\\" to open the disk image, then drag OpenClawMonitor to your Applications folder.\" " +
+                $"Click \\\"Install Now\\\" to open the disk image, then drag OpenClawSecurityMonitor to your Applications folder.\" " +
                 $"with title \"Update Ready\" " +
                 $"buttons {{\"Later\", \"Install Now\"}} " +
                 $"default button \"Install Now\"";

@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace OpenClawSecurityMonitorMac.Services;
@@ -14,13 +15,14 @@ public static class UpdateChecker
 
     static UpdateChecker()
     {
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawMonitor/1.5.4");
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawSecurityMonitor/1.6.0");
         _http.Timeout = TimeSpan.FromSeconds(15);
     }
 
     /// <summary>
     /// Checks the GitHub releases API for a newer version.
     /// Returns an UpdateInfo (version + DMG download URL) if one is available, otherwise null.
+    /// Picks the DMG matching the current CPU architecture (arm64 or x64).
     /// </summary>
     public static async Task<UpdateInfo?> CheckAsync(string currentVersion)
     {
@@ -39,18 +41,26 @@ public static class UpdateChecker
             if (!Version.TryParse(currentVersion, out var current)) return null;
             if (latest <= current) return null;
 
-            // Find the DMG asset URL
+            // Pick the DMG that matches the running architecture
+            var archSuffix = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+                ? "-arm64.dmg"
+                : "-x64.dmg";
+
             if (!root.TryGetProperty("assets", out var assets)) return null;
+
+            string? fallbackUrl = null;
             foreach (var asset in assets.EnumerateArray())
             {
                 var name = asset.GetProperty("name").GetString() ?? "";
-                if (name.EndsWith(".dmg", StringComparison.OrdinalIgnoreCase))
-                {
-                    var url = asset.GetProperty("browser_download_url").GetString();
-                    if (url != null)
-                        return new UpdateInfo(tag, url);
-                }
+                if (!name.EndsWith(".dmg", StringComparison.OrdinalIgnoreCase)) continue;
+                var url = asset.GetProperty("browser_download_url").GetString();
+                if (url == null) continue;
+                if (name.EndsWith(archSuffix, StringComparison.OrdinalIgnoreCase))
+                    return new UpdateInfo(tag, url);
+                fallbackUrl ??= url; // keep first DMG as fallback if arch match not found
             }
+            if (fallbackUrl != null)
+                return new UpdateInfo(tag, fallbackUrl);
         }
         catch
         {
@@ -68,7 +78,9 @@ public static class UpdateChecker
     {
         try
         {
-            var fileName  = $"OpenClawMonitor-{info.Version}.dmg";
+            var archSuffix = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+                ? "arm64" : "x64";
+            var fileName  = $"OpenClawSecurityMonitor-{info.Version}-{archSuffix}.dmg";
             var localPath = Path.Combine(Path.GetTempPath(), fileName);
 
             if (File.Exists(localPath))
@@ -76,7 +88,7 @@ public static class UpdateChecker
 
             using var client = new HttpClient();
             client.Timeout = TimeSpan.FromMinutes(5);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawMonitor/1.5.4");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("OpenClawSecurityMonitor/1.6.0");
 
             var bytes = await client.GetByteArrayAsync(info.DownloadUrl, ct);
             await File.WriteAllBytesAsync(localPath, bytes, ct);
